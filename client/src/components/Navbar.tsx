@@ -7,6 +7,7 @@ import GoogleButton from 'react-google-button'
 import { useSelector, useDispatch } from 'react-redux'
 import { login } from "../redux/auth/action";
 import { toast } from 'react-toastify';
+import { BsChevronDown } from 'react-icons/bs'
 export default function Navbar() {
     const state = useSelector((store: any) => store.authReducer)
     console.log(state)
@@ -127,15 +128,15 @@ export default function Navbar() {
             <div className="h-[10vh] bg-black px-5 flex items-center justify-between md:px-14">
                 <h1 className="flex font-extrabold text-2xl text-white md:text-3xl">Task<p className="text-yellow-400">Tracker</p></h1>
                 {state.isAuthenticated ?
-                    <button
+                    <div
                         aria-controls={open ? 'basic-menu' : undefined}
                         aria-haspopup="true"
                         aria-expanded={open ? 'true' : undefined}
-                        onClick={handleClick}
                         className="flex items-center gap-2 cursor-pointer">{state.user.profilePicture !== null ?
                             <Avatar src={state.user.profilePicture} /> : <Avatar sx={{ bgcolor: "red" }}>{state.user.name[0]}</Avatar>}
                         <p className="hidden md:block text-white">{state.user.name}</p>
-                    </button> :
+                        <button onClick={handleClick} className="text-white"><BsChevronDown /></button>
+                    </div> :
                     <div className="hidden md:flex">
                         <button className="text-yellow-400 px-5 py-1.5 font-bold" onClick={() => {
                             handleOpenLogin()
