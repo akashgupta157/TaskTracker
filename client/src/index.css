@@ -1,0 +1,11 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+* {
+  padding: 0;
+  margin: 0;
+  font-family: "Raleway", sans-serif;
+}
+.MuiOutlinedInput-notchedOutline {
+  border-color: white !important;
+}
