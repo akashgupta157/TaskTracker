@@ -1,13 +1,23 @@
+require("dotenv").config();
 const router = require("express").Router();
 const passport1 = require("passport");
 const bcrypt = require("bcrypt");
 const userModel = require("../models/user.model");
+const jwt = require("jsonwebtoken");
 router.get("/login/success", (req: any, res: any) => {
     if (req.user) {
+        const token = jwt.sign(
+            { userId: req.user._id, user: req.user.email },
+            process.env.secretKey,
+            {
+                expiresIn: "1d",
+            }
+        );
         res.status(200).json({
             error: false,
             message: "Successfully Loged In",
             user: req.user,
+            token
         });
     } else {
         res.status(403).json({ error: true, message: "Not Authorized" });
@@ -68,7 +78,14 @@ router.post("/login", async (req: any, res: any) => {
         if (!passwordMatch) {
             return res.json({ message: "Incorrect Password", auth: false });
         }
-        res.json({ message: "Login successful", user, auth: true });
+        const token = jwt.sign(
+            { userId: user._id, user: user.email },
+            process.env.secretKey,
+            {
+                expiresIn: "1d",
+            }
+        );
+        res.json({ message: "Login successful", user, token, auth: true });
     } catch (error) {
         res.json({ message: error.message });
     }

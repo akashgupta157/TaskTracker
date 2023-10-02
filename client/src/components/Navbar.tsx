@@ -8,9 +8,10 @@ import { useSelector, useDispatch } from 'react-redux'
 import { login } from "../redux/auth/action";
 import { toast } from 'react-toastify';
 import { BsChevronDown } from 'react-icons/bs'
+import { useNavigate } from "react-router-dom";
 export default function Navbar() {
+    const nav = useNavigate()
     const state = useSelector((store: any) => store.authReducer)
-    console.log(state)
     const dispatch = useDispatch()
     const googleAuth = () => {
         window.open(
@@ -21,7 +22,7 @@ export default function Navbar() {
     const getUser = async () => {
         try {
             const { data } = await axios.get(`${url}/auth/login/success`, { withCredentials: true });
-            dispatch(login((data.user)))
+            dispatch(login({ ...data.user, token: data.token }))
         } catch (err) {
             console.log(err);
         }
@@ -73,7 +74,7 @@ export default function Navbar() {
                 progress: undefined,
                 theme: "colored",
             });
-            dispatch(login((data.user)))
+            dispatch(login({ ...data.user, token: data.token }))
             handleCloseLogin()
             setFormData({
                 name: "", email: "", password: "",
@@ -125,15 +126,15 @@ export default function Navbar() {
     }
     return (
         <>
-            <div className="h-[10vh] bg-black px-5 flex items-center justify-between md:px-14">
-                <h1 className="flex font-extrabold text-2xl text-white md:text-3xl">Task<p className="text-yellow-400">Tracker</p></h1>
+            <div className="h-[10vh] bg-[#1c2025] px-5 flex items-center justify-between md:px-14">
+                <h1 onClick={() => nav('/')} className="flex font-extrabold text-2xl text-white md:text-3xl cursor-pointer">Task<p className="text-yellow-400">Tracker</p></h1>
                 {state.isAuthenticated ?
                     <div
                         aria-controls={open ? 'basic-menu' : undefined}
                         aria-haspopup="true"
                         aria-expanded={open ? 'true' : undefined}
                         className="flex items-center gap-2 cursor-pointer">{state.user.profilePicture !== null ?
-                            <Avatar src={state.user.profilePicture} /> : <Avatar sx={{ bgcolor: "red" }}>{state.user.name[0]}</Avatar>}
+                            <Avatar src={state.user.profilePicture} sx={{ width: 30, height: 30 }} /> : <Avatar sx={{ width: 30, height: 30, bgcolor: "red" }}>{state.user.name[0]}</Avatar>}
                         <p className="hidden md:block text-white">{state.user.name}</p>
                         <button onClick={handleClick} className="text-white"><BsChevronDown /></button>
                     </div> :
