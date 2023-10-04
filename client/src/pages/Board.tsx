@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { url } from "../components/url";
 import { AiOutlinePlus, AiOutlineCalendar, AiOutlineCheckSquare } from "react-icons/ai";
-import { MdSubtitles } from "react-icons/md";
+import { MdSubtitles, MdOutlineDeleteOutline } from "react-icons/md";
 import { BsJustifyLeft, BsArrowDownUp, BsArrowRight } from "react-icons/bs";
 import { BiPencil } from "react-icons/bi";
 import { IoAttach } from "react-icons/io5";
@@ -66,6 +66,7 @@ export default function Board() {
         },
     };
     const [formData, setFormData] = useState({
+        _id: "",
         title: "",
         category: "",
         priority: "",
@@ -125,6 +126,7 @@ export default function Board() {
         const { data } = await axios.post(`${url}/board`, formData, config);
         setList([...list, data.board]);
         setFormData({
+            _id: "",
             title: "",
             category: "",
             priority: "",
@@ -136,7 +138,55 @@ export default function Board() {
         });
         handleCloseAdd();
     };
-    const handleSubmitUpdate = () => {
+    const handleSubmitUpdate = async (e: React.FormEvent) => {
+        e.preventDefault();
+        await axios.patch(`${url}/board/${formData._id}`, formData, config);
+        const updatedTask = {
+            todoTasks: task.todoTasks.map((item) =>
+                item._id === formData._id ? formData : item
+            ),
+            doingTasks: task.doingTasks.map((item) =>
+                item._id === formData._id ? formData : item
+            ),
+            doneTasks: task.doneTasks.map((item) =>
+                item._id === formData._id ? formData : item
+            ),
+        };
+        setTask(updatedTask);
+        setFormData({
+            _id: "",
+            title: "",
+            category: "",
+            priority: "",
+            description: "",
+            dueDate: "",
+            checklist: "",
+            attachment: "",
+            user: state.user._id,
+        });
+        handleCloseEdit();
+    }
+    const handleSubmitDelete = async (e: React.FormEvent) => {
+        e.preventDefault();
+        await axios.delete(`${url}/board/${formData._id}`, config);
+        const updatedTask = {
+            todoTasks: task.todoTasks.filter((board) => board._id !== formData._id),
+            doingTasks: task.doingTasks.filter((board) => board._id !== formData._id),
+            doneTasks: task.doneTasks.filter((board) => board._id !== formData._id),
+        };
+        setTask(updatedTask);
+        setFormData({
+            _id: "",
+            title: "",
+            category: "",
+            priority: "",
+            description: "",
+            dueDate: "",
+            checklist: "",
+            attachment: "",
+            user: state.user._id,
+        });
+        handleCloseEdit();
     }
     const [anchorElPriority, setAnchorElPriority] = useState<null | HTMLElement>(null);
     const handleClickPriority = (event: React.MouseEvent<HTMLDivElement>) => {
@@ -170,7 +220,7 @@ export default function Board() {
                                 className="task hover:bg-[#363b3f] p-2 rounded bg-[#25282a] cursor-pointer"
                                 onClick={() => {
                                     setFormData(e);
-                                    // handleOpenAdd();
+                                    handleOpenEdit()
                                 }}
                             >
                                 {e.priority && (
@@ -201,6 +251,7 @@ export default function Board() {
                         onClick={() => {
                             handleOpenAdd();
                             setFormData({
+                                _id: "",
                                 title: "",
                                 category: "To do",
                                 priority: "",
@@ -225,7 +276,7 @@ export default function Board() {
                                 className="task hover:bg-[#363b3f] p-2 rounded bg-[#25282a] cursor-pointer"
                                 onClick={() => {
                                     setFormData(e);
-                                    // handleOpen();
+                                    handleOpenEdit()
                                 }}
                             >
                                 {e.priority && (
@@ -256,6 +307,7 @@ export default function Board() {
                         onClick={() => {
                             handleOpenAdd();
                             setFormData({
+                                _id: "",
                                 title: "",
                                 category: "Doing",
                                 priority: "",
@@ -280,7 +332,7 @@ export default function Board() {
                                 className="task hover:bg-[#363b3f] p-2 rounded bg-[#25282a] cursor-pointer"
                                 onClick={() => {
                                     setFormData(e);
-                                    // handleOpen();
+                                    handleOpenEdit()
                                 }}
                             >
                                 {e.priority && (
@@ -311,6 +363,7 @@ export default function Board() {
                         onClick={() => {
                             handleOpenAdd();
                             setFormData({
+                                _id: "",
                                 title: "",
                                 category: "Done",
                                 priority: "",
@@ -399,7 +452,7 @@ export default function Board() {
                             <h1 className="text-base font-bold flex gap-2 items-center">
                                 Add to card
                             </h1>
-                            <p className="flex items-center gap-2 text-sm font-semibold mt-1 bg-gray-700 p-1 rounded-md hover:bg-gray-500 cursor-pointer w-[150px]"><BsArrowRight /> Move</p>
+                            {/* <p className="flex items-center gap-2 text-sm font-semibold mt-1 bg-gray-700 p-1 rounded-md hover:bg-gray-500 cursor-pointer w-[150px]"><BsArrowRight /> Move</p> */}
                             <p onClick={handleClickPriority} className="flex items-center gap-2 text-sm font-semibold mt-1 bg-gray-700 p-1 rounded-md hover:bg-gray-500 cursor-pointer w-[150px]"><BsArrowDownUp /> Priority</p>
                             <p onClick={handleClickCalender} className="flex items-center gap-2 text-sm font-semibold mt-1 bg-gray-700 p-1 rounded-md hover:bg-gray-500 cursor-pointer w-[150px]"><AiOutlineCalendar />Due Date</p>
                             <p className="flex items-center gap-2 text-sm font-semibold mt-1 bg-gray-700 p-1 rounded-md hover:bg-gray-500 cursor-pointer w-[150px]"><AiOutlineCheckSquare />Checklist</p>
@@ -411,6 +464,94 @@ export default function Board() {
                         onClick={handleSubmit}
                     >
                         Save
+                    </button>
+                </Box>
+            </Modal>
+            <Modal open={openEdit} onClose={handleCloseEdit}>
+                <Box sx={style}>
+                    <div className="md:flex md:gap-10">
+                        <div className="md:w-[70%]">
+                            <div className="flex items-center gap-3 ">
+                                <MdSubtitles style={{ fontSize: "22px" }} />
+                                {isInputVisible ? (
+                                    <TextField
+                                        inputRef={inputRef}
+                                        value={formData.title}
+                                        onChange={(e) =>
+                                            setFormData({ ...formData, title: e.target.value })
+                                        }
+                                        onBlur={() => setInputVisible(false)}
+                                        autoFocus
+                                        fullWidth
+                                        size="small"
+                                        autoComplete="off"
+                                        sx={{ input: { color: "white", fontSize: "20px" } }}
+                                    />
+                                ) : (
+                                    <h1
+                                        className="text-xl w-full font-semibold"
+                                        onClick={handleTextClick}
+                                        ref={inputRef}
+                                    >
+                                        {formData.title || "Untitled"}
+                                    </h1>
+                                )}
+                            </div>
+                            <p className="text-sm">
+                                in list <b>{formData.category}</b>
+                            </p>
+                            <h1 className="text-base font-bold flex gap-3 items-center mt-7 mb-3">
+                                <BsJustifyLeft style={{ fontSize: "18px" }} />
+                                Description
+                            </h1>
+                            <ReactQuill
+                                className="my-4 dark:border-secondary-40 border-gray-500 rounded-md text-gray-800 dark:text-white"
+                                placeholder="Write something here..."
+                                modules={modules}
+                                formats={formats}
+                                value={formData.description}
+                                onChange={(e) => setFormData({ ...formData, description: e })}
+                            />
+                            {
+                                formData.priority && <div className="flex items-center gap-2 mt-5 mb-3">
+                                    <h1 className="text-base font-bold flex gap-3 items-center"><BsArrowDownUp />Priority :-</h1>
+                                    <p
+                                        className={`w-8 my-1 h-2 rounded-br-3xl ${formData.priority == "High"
+                                            ? "bg-red-700"
+                                            : formData.priority == "Mid"
+                                                ? "bg-yellow-600"
+                                                : formData.priority == "Low"
+                                                    ? "bg-green-600"
+                                                    : null
+                                            }`}
+                                    ></p>
+                                    {formData.priority}
+                                </div>
+                            }
+                            {
+                                formData.dueDate && <div className="flex items-center gap-2 mt-5 mb-3">
+                                    <h1 className="text-base font-bold flex gap-3 items-center"><AiOutlineCalendar />Due Date :-</h1>
+                                    {formData.dueDate.split('00:00:00')[0]}
+                                </div>
+                            }
+                        </div>
+                        <div>
+                            <h1 className="text-base font-bold flex gap-2 items-center">
+                                Add to card
+                            </h1>
+                            <p className="flex items-center gap-2 text-sm font-semibold mt-1 bg-gray-700 p-1 rounded-md hover:bg-gray-500 cursor-pointer w-[150px]"><BsArrowRight /> Move</p>
+                            <p onClick={handleClickPriority} className="flex items-center gap-2 text-sm font-semibold mt-1 bg-gray-700 p-1 rounded-md hover:bg-gray-500 cursor-pointer w-[150px]"><BsArrowDownUp /> Priority</p>
+                            <p onClick={handleClickCalender} className="flex items-center gap-2 text-sm font-semibold mt-1 bg-gray-700 p-1 rounded-md hover:bg-gray-500 cursor-pointer w-[150px]"><AiOutlineCalendar />Due Date</p>
+                            <p className="flex items-center gap-2 text-sm font-semibold mt-1 bg-gray-700 p-1 rounded-md hover:bg-gray-500 cursor-pointer w-[150px]"><AiOutlineCheckSquare />Checklist</p>
+                            <p className="flex items-center gap-2 text-sm font-semibold mt-1 bg-gray-700 p-1 rounded-md hover:bg-gray-500 cursor-pointer w-[150px]"><IoAttach />Attachment</p>
+                            <p onClick={handleSubmitDelete} className="flex items-center gap-2 text-sm font-semibold mt-1 bg-gray-700 p-1 rounded-md hover:bg-gray-500 cursor-pointer w-[150px]"><MdOutlineDeleteOutline />Delete</p>
+                        </div>
+                    </div>
+                    <button
+                        className="bg-[#579DFF] rounded text-gray-900 font-semibold px-2.5 py-1"
+                        onClick={handleSubmitUpdate}
+                    >
+                        Update
                     </button>
                 </Box>
             </Modal>
