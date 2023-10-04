@@ -12,7 +12,6 @@ import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import Calendar from "react-calendar";
 import 'react-calendar/dist/Calendar.css';
-
 export default function Board() {
     const state = useSelector((store: any) => store.authReducer);
     const config = {
@@ -76,7 +75,6 @@ export default function Board() {
         attachment: "",
         user: state.user._id,
     });
-    console.log(formData)
     const [isInputVisible, setInputVisible] = useState(false);
     const inputRef = useRef<HTMLDivElement | null>(null);
     useEffect(() => {
