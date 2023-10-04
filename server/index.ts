@@ -14,7 +14,7 @@ app.use(
   cookieSession({
     name: "session",
     keys: ["TaskTracker"],
-    maxAge: 0 * 60 * 1000,
+    maxAge: 1 * 60 * 60 * 1000,
   })
 );
 app.use(passport.initialize());

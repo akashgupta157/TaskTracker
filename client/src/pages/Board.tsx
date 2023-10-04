@@ -200,6 +200,13 @@ export default function Board() {
     const handleCloseCalender = () => {
         setAnchorElCalender(null);
     };
+    const [anchorElMove, setAnchorElMove] = useState<null | HTMLElement>(null);
+    const handleClickMove = (event: React.MouseEvent<HTMLDivElement>) => {
+        setAnchorElMove(event.currentTarget);
+    };
+    const handleCloseMove = () => {
+        setAnchorElMove(null);
+    };
     const handleDueDateChange = (value: Date) => {
         setFormData({
             ...formData,
@@ -537,7 +544,7 @@ export default function Board() {
                             <h1 className="text-base font-bold flex gap-2 items-center">
                                 Add to card
                             </h1>
-                            <p className="flex items-center gap-2 text-sm font-semibold mt-1 bg-gray-700 p-1 rounded-md hover:bg-gray-500 cursor-pointer w-[150px]"><BsArrowRight /> Move</p>
+                            <p onClick={handleClickMove} className="flex items-center gap-2 text-sm font-semibold mt-1 bg-gray-700 p-1 rounded-md hover:bg-gray-500 cursor-pointer w-[150px]"><BsArrowRight /> Move</p>
                             <p onClick={handleClickPriority} className="flex items-center gap-2 text-sm font-semibold mt-1 bg-gray-700 p-1 rounded-md hover:bg-gray-500 cursor-pointer w-[150px]"><BsArrowDownUp /> Priority</p>
                             <p onClick={handleClickCalender} className="flex items-center gap-2 text-sm font-semibold mt-1 bg-gray-700 p-1 rounded-md hover:bg-gray-500 cursor-pointer w-[150px]"><AiOutlineCalendar />Due Date</p>
                             <p className="flex items-center gap-2 text-sm font-semibold mt-1 bg-gray-700 p-1 rounded-md hover:bg-gray-500 cursor-pointer w-[150px]"><AiOutlineCheckSquare />Checklist</p>
@@ -589,6 +596,52 @@ export default function Board() {
                 }
             >
                 <Calendar onClickDay={handleCloseCalender} minDate={new Date()} value={formData.dueDate} onChange={handleDueDateChange as any} />
+            </Menu>
+            <Menu
+                anchorEl={anchorElMove}
+                open={Boolean(anchorElMove)}
+                onClose={handleCloseMove}
+                sx={
+                    {
+                        mt: "1px", "& .MuiMenu-paper":
+                            { backgroundColor: "darkgray", },
+                    }
+                }
+            >
+                {
+                    formData.category == "To do" ?
+                        <>
+                            <MenuItem onClick={() => {
+                                handleCloseMove()
+                                setFormData({ ...formData, category: "Doing" })
+                            }}>Doing</MenuItem>
+                            <MenuItem onClick={() => {
+                                handleCloseMove()
+                                setFormData({ ...formData, category: "Done" })
+                            }}>Done</MenuItem>
+                        </> :
+                        formData.category == 'Doing' ?
+                            <>
+                                <MenuItem onClick={() => {
+                                    handleCloseMove()
+                                    setFormData({ ...formData, category: "To do" })
+                                }}>To do</MenuItem>
+                                <MenuItem onClick={() => {
+                                    handleCloseMove()
+                                    setFormData({ ...formData, category: "Done" })
+                                }}>Done</MenuItem>
+                            </> :
+                            <>
+                                <MenuItem onClick={() => {
+                                    handleCloseMove()
+                                    setFormData({ ...formData, category: "To do" })
+                                }}>To do</MenuItem>
+                                <MenuItem onClick={() => {
+                                    handleCloseMove()
+                                    setFormData({ ...formData, category: "Doing" })
+                                }}>Doing</MenuItem>
+                            </>
+                }
             </Menu>
         </>
     );

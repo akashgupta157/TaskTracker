@@ -5,7 +5,7 @@ import { FiMenu } from 'react-icons/fi'
 import { Menu, MenuItem, Modal, Box, TextField, Avatar } from "@mui/material";
 import GoogleButton from 'react-google-button'
 import { useSelector, useDispatch } from 'react-redux'
-import { login } from "../redux/auth/action";
+import { login, logout } from "../redux/auth/action";
 import { toast } from 'react-toastify';
 import { BsChevronDown } from 'react-icons/bs'
 import { useNavigate } from "react-router-dom";
@@ -124,6 +124,11 @@ export default function Navbar() {
             });
         }
     }
+    const handleLogout = () => {
+        nav('/')
+        dispatch(logout())
+        axios.get(`${url}/auth/logout`)
+    }
     return (
         <>
             <div className="h-[10vh] bg-[#1c2025] px-5 flex items-center justify-between md:px-14">
@@ -175,6 +180,7 @@ export default function Navbar() {
                                     handleClose()
                                 }}>Profile</MenuItem>
                                 <MenuItem onClick={() => {
+                                    handleLogout()
                                     handleClose()
                                 }}>Logout</MenuItem>
                             </>
