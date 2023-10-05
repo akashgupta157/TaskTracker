@@ -52,20 +52,6 @@ router1.get("/", async (req: CustomRequest, res: Response) => {
         res.status(500).json({ error: "An error occurred while retrieving boards" });
     }
 });
-router1.get("/:boardId", async (req: CustomRequest, res: Response) => {
-    try {
-        const userId = req.userId;
-        const boardId = req.params.boardId;
-        const board = await boardModel.findOne({ _id: boardId, user: userId });
-        if (!board) {
-            return res.status(404).json({ error: "Board not found or unauthorized" });
-        }
-        res.status(200).json({ board });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: "An error occurred while retrieving the board" });
-    }
-});
 router1.patch("/:boardId", async (req: CustomRequest, res: Response) => {
     try {
         const userId = req.userId;
