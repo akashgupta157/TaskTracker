@@ -4,14 +4,15 @@ import { useSelector } from "react-redux";
 import { url } from "../components/url";
 import { AiOutlinePlus, AiOutlineCalendar, AiOutlineCheckSquare } from "react-icons/ai";
 import { MdSubtitles, MdOutlineDeleteOutline } from "react-icons/md";
-import { BsJustifyLeft, BsArrowDownUp, BsArrowRight } from "react-icons/bs";
+import { BsJustifyLeft, BsArrowDownUp, BsArrowRight, BsCheckSquareFill } from "react-icons/bs";
 import { BiPencil } from "react-icons/bi";
 import { IoAttach } from "react-icons/io5";
-import { Box, Menu, MenuItem, Modal, TextField } from "@mui/material";
+import { Box, Checkbox, Menu, MenuItem, Modal, TextField } from "@mui/material";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import Calendar from "react-calendar";
 import 'react-calendar/dist/Calendar.css';
+import { pink } from "@mui/material/colors";
 interface FormData {
     _id: string;
     title: string;
@@ -146,6 +147,7 @@ export default function Board() {
             user: state.user._id,
         });
         handleCloseAdd();
+        setIsChecklistOpen(false)
     };
     const handleSubmitUpdate = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -259,26 +261,28 @@ export default function Board() {
                                     handleOpenEdit()
                                 }}
                             >
-                                {e.priority && (
-                                    <p
-                                        className={`w-8 my-1 h-2 rounded-br-3xl ${e.priority == "High"
-                                            ? "bg-red-700"
-                                            : e.priority == "Mid"
-                                                ? "bg-yellow-600"
-                                                : e.priority == "Low"
-                                                    ? "bg-green-600"
-                                                    : null
-                                            }`}
-                                    ></p>
-                                )}
-                                <h1 className="flex items-center justify-between">
+
+                                <div className="flex gap-2 items-center">
+                                    {e.priority && (
+                                        <p
+                                            className={`w-8 my-1 h-2 rounded-br-3xl ${e.priority == "High"
+                                                ? "bg-red-700"
+                                                : e.priority == "Mid"
+                                                    ? "bg-yellow-600"
+                                                    : e.priority == "Low"
+                                                        ? "bg-green-600"
+                                                        : null
+                                                }`}
+                                        ></p>
+                                    )}
+                                    {e.description && <BsJustifyLeft />}
+                                    {e.dueDate && <AiOutlineCalendar />}
+                                    {e.checklist && <BsCheckSquareFill className="text-sm" />}
+                                    {e.attachment && <IoAttach />}
+                                </div>
+                                <h1 className="flex items-center justify-between mt-1-">
                                     {e.title} <BiPencil className="pencil-icon" />
                                 </h1>
-                                <div className="flex gap-1">
-                                    {e.description && <BsJustifyLeft className="my-1" />}
-                                    {e.dueDate && <AiOutlineCalendar className="my-1" />}
-                                    {e.attachment && <IoAttach className="my-1" />}
-                                </div>
                             </div>
                         ))}
                     </div>
@@ -315,26 +319,27 @@ export default function Board() {
                                     handleOpenEdit()
                                 }}
                             >
-                                {e.priority && (
-                                    <p
-                                        className={`w-8 my-1 h-2 rounded-br-3xl ${e.priority == "High"
-                                            ? "bg-red-700"
-                                            : e.priority == "Mid"
-                                                ? "bg-yellow-600"
-                                                : e.priority == "Low"
-                                                    ? "bg-green-600"
-                                                    : null
-                                            }`}
-                                    ></p>
-                                )}
+                                <div className="flex gap-2 items-center">
+                                    {e.priority && (
+                                        <p
+                                            className={`w-8 my-1 h-2 rounded-br-3xl ${e.priority == "High"
+                                                ? "bg-red-700"
+                                                : e.priority == "Mid"
+                                                    ? "bg-yellow-600"
+                                                    : e.priority == "Low"
+                                                        ? "bg-green-600"
+                                                        : null
+                                                }`}
+                                        ></p>
+                                    )}
+                                    {e.description && <BsJustifyLeft />}
+                                    {e.dueDate && <AiOutlineCalendar />}
+                                    {e.checklist && <BsCheckSquareFill className="text-sm" />}
+                                    {e.attachment && <IoAttach />}
+                                </div>
                                 <h1 className="flex items-center justify-between">
                                     {e.title} <BiPencil className="pencil-icon" />
                                 </h1>
-                                <div className="flex gap-1">
-                                    {e.description && <BsJustifyLeft className="my-1" />}
-                                    {e.dueDate && <AiOutlineCalendar className="my-1" />}
-                                    {e.attachment && <IoAttach className="my-1" />}
-                                </div>
                             </div>
                         ))}
                     </div>
@@ -371,26 +376,27 @@ export default function Board() {
                                     handleOpenEdit()
                                 }}
                             >
-                                {e.priority && (
-                                    <p
-                                        className={`w-8 my-1 h-2 rounded-br-3xl ${e.priority == "High"
-                                            ? "bg-red-700"
-                                            : e.priority == "Mid"
-                                                ? "bg-yellow-600"
-                                                : e.priority == "Low"
-                                                    ? "bg-green-600"
-                                                    : null
-                                            }`}
-                                    ></p>
-                                )}
+                                <div className="flex gap-2 items-center">
+                                    {e.priority && (
+                                        <p
+                                            className={`w-8 my-1 h-2 rounded-br-3xl ${e.priority == "High"
+                                                ? "bg-red-700"
+                                                : e.priority == "Mid"
+                                                    ? "bg-yellow-600"
+                                                    : e.priority == "Low"
+                                                        ? "bg-green-600"
+                                                        : null
+                                                }`}
+                                        ></p>
+                                    )}
+                                    {e.description && <BsJustifyLeft />}
+                                    {e.dueDate && <AiOutlineCalendar />}
+                                    {e.checklist.length > 0 && <BsCheckSquareFill className="text-sm" />}
+                                    {e.attachment && <IoAttach />}
+                                </div>
                                 <h1 className="flex items-center justify-between">
                                     {e.title} <BiPencil className="pencil-icon" />
                                 </h1>
-                                <div className="flex gap-1">
-                                    {e.description && <BsJustifyLeft className="my-1" />}
-                                    {e.dueDate && <AiOutlineCalendar className="my-1" />}
-                                    {e.attachment && <IoAttach className="my-1" />}
-                                </div>
                             </div>
                         ))}
                     </div>
@@ -416,7 +422,10 @@ export default function Board() {
                     </button>
                 </div>
             </div>
-            <Modal open={openAdd} onClose={handleCloseAdd}>
+            <Modal open={openAdd} onClose={() => {
+                handleCloseAdd()
+                setIsChecklistOpen(false)
+            }}>
                 <Box sx={style}>
                     <div className="md:flex md:gap-10">
                         <div className="md:w-[70%]">
@@ -487,20 +496,23 @@ export default function Board() {
                                 <div>
                                     {formData.checklist.map((item, index) => (
                                         <div key={index} className="flex items-center gap-2">
-                                            <input
-                                                type="checkbox"
-                                                checked={item.checked}
+                                            <Checkbox checked={item.checked}
                                                 onChange={() => toggleChecklistItem(index)}
+                                                sx={{
+                                                    color: pink[50],
+                                                    '&.Mui-checked': {
+                                                        color: pink[50],
+                                                    },
+                                                }}
                                             />
-                                            <input
-                                                type="text"
+                                            <TextField id="standard-basic" variant="standard" type="text"
                                                 value={item.details}
-                                                onChange={(e) => updateChecklistItem(index, e.target.value)}
                                                 placeholder="Add a checklist item"
-                                            />
+                                                sx={{ input: { color: "white" } }}
+                                                onChange={(e) => updateChecklistItem(index, e.target.value)} />
                                         </div>
                                     ))}
-                                    <button onClick={addChecklistItem}>Add Checklist Item</button>
+                                    <button onClick={addChecklistItem} className="mb-3">Add Checklist Item</button>
                                 </div>
                             )}
                         </div>
@@ -523,7 +535,10 @@ export default function Board() {
                     </button>
                 </Box>
             </Modal>
-            <Modal open={openEdit} onClose={handleCloseEdit}>
+            <Modal open={openEdit} onClose={() => {
+                handleCloseEdit()
+                setIsChecklistOpen(false)
+            }}>
                 <Box sx={style}>
                     <div className="md:flex md:gap-10">
                         <div className="md:w-[70%]">
