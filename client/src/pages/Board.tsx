@@ -12,6 +12,17 @@ import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import Calendar from "react-calendar";
 import 'react-calendar/dist/Calendar.css';
+interface FormData {
+    _id: string;
+    title: string;
+    category: string;
+    priority: string;
+    description: string;
+    dueDate: string;
+    checklist: { details: string; checked: boolean }[];
+    attachment: string;
+    user: string;
+}
 export default function Board() {
     const state = useSelector((store: any) => store.authReducer);
     const config = {
@@ -64,14 +75,14 @@ export default function Board() {
             width: "95%",
         },
     };
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState<FormData>({
         _id: "",
         title: "",
         category: "",
         priority: "",
         description: "",
         dueDate: "",
-        checklist: "",
+        checklist: [],
         attachment: "",
         user: state.user._id,
     });
@@ -130,7 +141,7 @@ export default function Board() {
             priority: "",
             description: "",
             dueDate: "",
-            checklist: "",
+            checklist: [],
             attachment: "",
             user: state.user._id,
         });
@@ -158,7 +169,7 @@ export default function Board() {
             priority: "",
             description: "",
             dueDate: "",
-            checklist: "",
+            checklist: [],
             attachment: "",
             user: state.user._id,
         });
@@ -180,7 +191,7 @@ export default function Board() {
             priority: "",
             description: "",
             dueDate: "",
-            checklist: "",
+            checklist: [],
             attachment: "",
             user: state.user._id,
         });
@@ -212,6 +223,26 @@ export default function Board() {
             ...formData,
             dueDate: value instanceof Date ? value.toString() : value
         });
+    };
+    const [isChecklistOpen, setIsChecklistOpen] = useState(false);
+    const toggleChecklist = () => {
+        setIsChecklistOpen(!isChecklistOpen);
+    };
+    const addChecklistItem = () => {
+        setFormData({
+            ...formData,
+            checklist: [...formData.checklist, { details: "", checked: false }],
+        });
+    };
+    const updateChecklistItem = (index: number, value: string) => {
+        const updatedChecklist = [...formData.checklist];
+        updatedChecklist[index].details = value;
+        setFormData({ ...formData, checklist: updatedChecklist });
+    };
+    const toggleChecklistItem = (index: number) => {
+        const updatedChecklist = [...formData.checklist];
+        updatedChecklist[index].checked = !updatedChecklist[index].checked;
+        setFormData({ ...formData, checklist: updatedChecklist });
     };
     return (
         <>
@@ -262,7 +293,7 @@ export default function Board() {
                                 priority: "",
                                 description: "",
                                 dueDate: "",
-                                checklist: "",
+                                checklist: [],
                                 attachment: "",
                                 user: state.user._id,
                             });
@@ -318,7 +349,7 @@ export default function Board() {
                                 priority: "",
                                 description: "",
                                 dueDate: "",
-                                checklist: "",
+                                checklist: [],
                                 attachment: "",
                                 user: state.user._id,
                             });
@@ -374,7 +405,7 @@ export default function Board() {
                                 priority: "",
                                 description: "",
                                 dueDate: "",
-                                checklist: "",
+                                checklist: [],
                                 attachment: "",
                                 user: state.user._id,
                             });
@@ -452,6 +483,26 @@ export default function Board() {
                                     {formData.dueDate.split('00:00:00')[0]}
                                 </div>
                             }
+                            {isChecklistOpen && (
+                                <div>
+                                    {formData.checklist.map((item, index) => (
+                                        <div key={index} className="flex items-center gap-2">
+                                            <input
+                                                type="checkbox"
+                                                checked={item.checked}
+                                                onChange={() => toggleChecklistItem(index)}
+                                            />
+                                            <input
+                                                type="text"
+                                                value={item.details}
+                                                onChange={(e) => updateChecklistItem(index, e.target.value)}
+                                                placeholder="Add a checklist item"
+                                            />
+                                        </div>
+                                    ))}
+                                    <button onClick={addChecklistItem}>Add Checklist Item</button>
+                                </div>
+                            )}
                         </div>
                         <div>
                             <h1 className="text-base font-bold flex gap-2 items-center">
@@ -460,7 +511,7 @@ export default function Board() {
                             {/* <p className="flex items-center gap-2 text-sm font-semibold mt-1 bg-gray-700 p-1 rounded-md hover:bg-gray-500 cursor-pointer w-[150px]"><BsArrowRight /> Move</p> */}
                             <p onClick={handleClickPriority} className="flex items-center gap-2 text-sm font-semibold mt-1 bg-gray-700 p-1 rounded-md hover:bg-gray-500 cursor-pointer w-[150px]"><BsArrowDownUp /> Priority</p>
                             <p onClick={handleClickCalender} className="flex items-center gap-2 text-sm font-semibold mt-1 bg-gray-700 p-1 rounded-md hover:bg-gray-500 cursor-pointer w-[150px]"><AiOutlineCalendar />Due Date</p>
-                            <p className="flex items-center gap-2 text-sm font-semibold mt-1 bg-gray-700 p-1 rounded-md hover:bg-gray-500 cursor-pointer w-[150px]"><AiOutlineCheckSquare />Checklist</p>
+                            <p onClick={toggleChecklist} className="flex items-center gap-2 text-sm font-semibold mt-1 bg-gray-700 p-1 rounded-md hover:bg-gray-500 cursor-pointer w-[150px]"><AiOutlineCheckSquare />Checklist</p>
                             <p className="flex items-center gap-2 text-sm font-semibold mt-1 bg-gray-700 p-1 rounded-md hover:bg-gray-500 cursor-pointer w-[150px]"><IoAttach />Attachment</p>
                         </div>
                     </div>
