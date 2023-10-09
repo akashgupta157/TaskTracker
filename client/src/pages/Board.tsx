@@ -14,6 +14,7 @@ import Calendar from "react-calendar";
 import 'react-calendar/dist/Calendar.css';
 import { pink } from "@mui/material/colors";
 interface FormData {
+    updatedAt: string | number | Date;
     _id: string;
     title: string;
     category: string;
@@ -53,7 +54,10 @@ export default function Board() {
     }, [list]);
     useEffect(() => {
         fetchData();
-    }, [state]);
+    }, []);
+    useEffect(() => {
+        fetchData();
+    }, [task]);
     const [openAdd, setOpenAdd] = useState(false);
     const handleOpenAdd = () => setOpenAdd(true);
     const handleCloseAdd = () => setOpenAdd(false);
@@ -75,6 +79,9 @@ export default function Board() {
         "@media (max-width:425px)": {
             width: "95%",
         },
+        "@media (max-width:768px)": {
+            width: "95%",
+        },
     };
     const [formData, setFormData] = useState<FormData>({
         _id: "",
@@ -86,6 +93,7 @@ export default function Board() {
         checklist: [],
         attachment: "",
         user: state.user._id,
+        updatedAt: ''
     });
     const [isInputVisible, setInputVisible] = useState(false);
     const inputRef = useRef<HTMLDivElement | null>(null);
@@ -144,7 +152,7 @@ export default function Board() {
             dueDate: "",
             checklist: [],
             attachment: "",
-            user: state.user._id,
+            user: state.user._id, updatedAt: ''
         });
         handleCloseAdd();
         setIsChecklistOpen(false)
@@ -173,7 +181,7 @@ export default function Board() {
             dueDate: "",
             checklist: [],
             attachment: "",
-            user: state.user._id,
+            user: state.user._id, updatedAt: ''
         });
         handleCloseEdit();
     }
@@ -195,7 +203,7 @@ export default function Board() {
             dueDate: "",
             checklist: [],
             attachment: "",
-            user: state.user._id,
+            user: state.user._id, updatedAt: ''
         });
         handleCloseEdit();
     }
@@ -277,7 +285,7 @@ export default function Board() {
                                     )}
                                     {e.description && <BsJustifyLeft />}
                                     {e.dueDate && <AiOutlineCalendar />}
-                                    {e.checklist && <BsCheckSquareFill className="text-sm" />}
+                                    {e.checklist.length > 0 && <BsCheckSquareFill className="text-sm" />}
                                     {e.attachment && <IoAttach />}
                                 </div>
                                 <h1 className="flex items-center justify-between mt-1-">
@@ -299,7 +307,7 @@ export default function Board() {
                                 dueDate: "",
                                 checklist: [],
                                 attachment: "",
-                                user: state.user._id,
+                                user: state.user._id, updatedAt: ''
                             });
                         }}
                     >
@@ -334,7 +342,7 @@ export default function Board() {
                                     )}
                                     {e.description && <BsJustifyLeft />}
                                     {e.dueDate && <AiOutlineCalendar />}
-                                    {e.checklist && <BsCheckSquareFill className="text-sm" />}
+                                    {e.checklist.length > 0 && <BsCheckSquareFill className="text-sm" />}
                                     {e.attachment && <IoAttach />}
                                 </div>
                                 <h1 className="flex items-center justify-between">
@@ -356,7 +364,7 @@ export default function Board() {
                                 dueDate: "",
                                 checklist: [],
                                 attachment: "",
-                                user: state.user._id,
+                                user: state.user._id, updatedAt: ''
                             });
                         }}
                     >
@@ -413,7 +421,7 @@ export default function Board() {
                                 dueDate: "",
                                 checklist: [],
                                 attachment: "",
-                                user: state.user._id,
+                                user: state.user._id, updatedAt: ''
                             });
                         }}
                     >
@@ -507,12 +515,13 @@ export default function Board() {
                                             />
                                             <TextField id="standard-basic" variant="standard" type="text"
                                                 value={item.details}
+                                                autoComplete="off"
                                                 placeholder="Add a checklist item"
                                                 sx={{ input: { color: "white" } }}
                                                 onChange={(e) => updateChecklistItem(index, e.target.value)} />
                                         </div>
                                     ))}
-                                    <button onClick={addChecklistItem} className="mb-3">Add Checklist Item</button>
+                                    <button onClick={addChecklistItem} className="mb-3 bg-[#b8bbbe] rounded text-gray-900 font-semibold px-2.5 py-1">Add Checklist Item</button>
                                 </div>
                             )}
                         </div>
@@ -520,7 +529,6 @@ export default function Board() {
                             <h1 className="text-base font-bold flex gap-2 items-center">
                                 Add to card
                             </h1>
-                            {/* <p className="flex items-center gap-2 text-sm font-semibold mt-1 bg-gray-700 p-1 rounded-md hover:bg-gray-500 cursor-pointer w-[150px]"><BsArrowRight /> Move</p> */}
                             <p onClick={handleClickPriority} className="flex items-center gap-2 text-sm font-semibold mt-1 bg-gray-700 p-1 rounded-md hover:bg-gray-500 cursor-pointer w-[150px]"><BsArrowDownUp /> Priority</p>
                             <p onClick={handleClickCalender} className="flex items-center gap-2 text-sm font-semibold mt-1 bg-gray-700 p-1 rounded-md hover:bg-gray-500 cursor-pointer w-[150px]"><AiOutlineCalendar />Due Date</p>
                             <p onClick={toggleChecklist} className="flex items-center gap-2 text-sm font-semibold mt-1 bg-gray-700 p-1 rounded-md hover:bg-gray-500 cursor-pointer w-[150px]"><AiOutlineCheckSquare />Checklist</p>
@@ -618,12 +626,14 @@ export default function Board() {
                             <p onClick={handleSubmitDelete} className="flex items-center gap-2 text-sm font-semibold mt-1 bg-gray-700 p-1 rounded-md hover:bg-gray-500 cursor-pointer w-[150px]"><MdOutlineDeleteOutline />Delete</p>
                         </div>
                     </div>
-                    <button
-                        className="bg-[#579DFF] rounded text-gray-900 font-semibold px-2.5 py-1"
-                        onClick={handleSubmitUpdate}
-                    >
-                        Update
-                    </button>
+                    <div className="flex items-end justify-between">
+                        <button
+                            className="bg-[#579DFF] rounded text-gray-900 font-semibold px-2.5 py-1"
+                            onClick={handleSubmitUpdate}
+                        >
+                            Update
+                        </button>
+                        <p>Last Updated at: {new Date(formData?.updatedAt).toLocaleString()}</p></div>
                 </Box>
             </Modal>
             <Menu
@@ -676,37 +686,37 @@ export default function Board() {
             >
                 {
                     formData.category == "To do" ?
-                        <>
-                            <MenuItem onClick={() => {
+                        [
+                            <MenuItem key='doing' onClick={() => {
                                 handleCloseMove()
                                 setFormData({ ...formData, category: "Doing" })
-                            }}>Doing</MenuItem>
-                            <MenuItem onClick={() => {
+                            }}>Doing</MenuItem>,
+                            <MenuItem key='done' onClick={() => {
                                 handleCloseMove()
                                 setFormData({ ...formData, category: "Done" })
                             }}>Done</MenuItem>
-                        </> :
+                        ] :
                         formData.category == 'Doing' ?
-                            <>
-                                <MenuItem onClick={() => {
+                            [
+                                <MenuItem key="todo" onClick={() => {
                                     handleCloseMove()
                                     setFormData({ ...formData, category: "To do" })
-                                }}>To do</MenuItem>
-                                <MenuItem onClick={() => {
+                                }}>To do</MenuItem>,
+                                <MenuItem key='done' onClick={() => {
                                     handleCloseMove()
                                     setFormData({ ...formData, category: "Done" })
                                 }}>Done</MenuItem>
-                            </> :
-                            <>
-                                <MenuItem onClick={() => {
+                            ] :
+                            [
+                                <MenuItem key="todo" onClick={() => {
                                     handleCloseMove()
                                     setFormData({ ...formData, category: "To do" })
-                                }}>To do</MenuItem>
-                                <MenuItem onClick={() => {
+                                }}>To do</MenuItem>,
+                                <MenuItem key='doing' onClick={() => {
                                     handleCloseMove()
                                     setFormData({ ...formData, category: "Doing" })
                                 }}>Doing</MenuItem>
-                            </>
+                            ]
                 }
             </Menu>
         </>

@@ -75,6 +75,7 @@ export default function Navbar() {
                 theme: "colored",
             });
             dispatch(login({ ...data.user, token: data.token }))
+            localStorage.setItem("user", JSON.stringify({ ...data.user, token: data.token }))
             handleCloseLogin()
             setFormData({
                 name: "", email: "", password: "",
@@ -127,6 +128,7 @@ export default function Navbar() {
     const handleLogout = () => {
         nav('/')
         dispatch(logout())
+        localStorage.setItem("user", '')
         axios.get(`${url}/auth/logout`)
     }
     return (
@@ -175,26 +177,26 @@ export default function Navbar() {
                 >
                     {
                         state.isAuthenticated ?
-                            <>
-                                <MenuItem onClick={() => {
+                            [
+                                <MenuItem key="profile" onClick={() => {
                                     handleClose()
-                                }}>Profile</MenuItem>
-                                <MenuItem onClick={() => {
+                                }}>Profile</MenuItem>,
+                                <MenuItem key="logout" onClick={() => {
                                     handleLogout()
                                     handleClose()
                                 }}>Logout</MenuItem>
-                            </>
+                            ]
                             :
-                            <>
-                                <MenuItem onClick={() => {
+                            [
+                                <MenuItem key="login" onClick={() => {
                                     handleClose()
                                     handleOpenLogin()
-                                }}>Log In</MenuItem>
-                                <MenuItem onClick={() => {
+                                }}>Log In</MenuItem>,
+                                <MenuItem key="signup" onClick={() => {
                                     handleClose()
                                     handleOpenSignup()
                                 }}>Sign up</MenuItem>
-                            </>
+                            ]
                     }
                 </Menu>
             </div>

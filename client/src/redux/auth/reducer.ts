@@ -1,22 +1,23 @@
+const user = localStorage.getItem("user");
 const initialState = {
-    isAuthenticated: false,
-    user: [],
+  isAuthenticated: user ? true : false,
+  user: user ? JSON.parse(user) : [],
 };
 export const authReducer = (state = initialState, action: any) => {
-    switch (action.type) {
-        case "LOGIN":
-            return {
-                ...state,
-                isAuthenticated: true,
-                user: action.payload,
-            };
-        case "LOGOUT":
-            return {
-                ...state,
-                isAuthenticated: false,
-                user: null,
-            };
-        default:
-            return state;
-    }
+  switch (action.type) {
+    case "LOGIN":
+      return {
+        ...state,
+        isAuthenticated: true,
+        user: action.payload,
+      };
+    case "LOGOUT":
+      return {
+        ...state,
+        isAuthenticated: false,
+        user: null,
+      };
+    default:
+      return state;
+  }
 };
