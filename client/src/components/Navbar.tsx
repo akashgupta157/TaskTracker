@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { url } from "./url";
 import { FiMenu } from 'react-icons/fi'
 import { Menu, MenuItem, Modal, Box, TextField, Avatar } from "@mui/material";
-import GoogleButton from 'react-google-button'
+// import GoogleButton from 'react-google-button'
 import { useSelector, useDispatch } from 'react-redux'
 import { login, logout } from "../redux/auth/action";
 import { toast } from 'react-toastify';
@@ -13,12 +13,12 @@ export default function Navbar() {
     const nav = useNavigate()
     const state = useSelector((store: any) => store.authReducer)
     const dispatch = useDispatch()
-    const googleAuth = () => {
-        window.open(
-            `${url}/auth/google/callback`,
-            "_self"
-        );
-    };
+    // const googleAuth = () => {
+    //     window.open(
+    //         `${url}/auth/google/callback`,
+    //         "_self"
+    //     );
+    // };
     const getUser = async () => {
         try {
             const { data } = await axios.get(`${url}/auth/login/success`, { withCredentials: true });
@@ -221,14 +221,14 @@ export default function Navbar() {
                             }} sx={{ input: { color: 'white' } }} />
                         <button className="bg-yellow-400 px-5 py-1.5 rounded font-bold" type="submit">Log In</button>
                     </form>
-                    <div className="flex text-white justify-center items-center gap-2 mt-2 mb-2">
+                    {/* <div className="flex text-white justify-center items-center gap-2 mt-2 mb-2">
                         <hr className="border-1 w-32 border-white" />or<hr className="border-1 w-32 border-white" />
                     </div>
                     <GoogleButton
                         className="m-auto"
                         label='Login with Google'
                         onClick={googleAuth}
-                    />
+                    /> */}
                 </Box>
             </Modal>
             <Modal
@@ -257,14 +257,14 @@ export default function Navbar() {
                             }} sx={{ input: { color: 'white' } }} />
                         <button className="bg-yellow-400 px-5 py-1.5 rounded font-bold" type="submit">Sign up</button>
                     </form>
-                    <div className="flex text-white justify-center items-center gap-2 mt-2 mb-2">
+                    {/* <div className="flex text-white justify-center items-center gap-2 mt-2 mb-2">
                         <hr className="border-1 w-32 border-white" />or<hr className="border-1 w-32 border-white" />
                     </div>
                     <GoogleButton
                         className="m-auto"
                         label='Signup with Google'
                         onClick={googleAuth}
-                    />
+                    /> */}
                 </Box>
             </Modal>
         </>

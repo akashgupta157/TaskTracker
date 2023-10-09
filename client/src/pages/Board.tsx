@@ -13,6 +13,7 @@ import "react-quill/dist/quill.snow.css";
 import Calendar from "react-calendar";
 import 'react-calendar/dist/Calendar.css';
 import { pink } from "@mui/material/colors";
+import { toast } from "react-toastify";
 interface FormData {
     updatedAt: string | number | Date;
     _id: string;
@@ -75,7 +76,9 @@ export default function Board() {
         px: 3,
         py: 2,
         color: "#b6c2cf",
-        borderRadius: 4,
+        overflowX: 'hidden',
+        overflowY: 'scroll',
+        maxHeight: '95%',
         "@media (max-width:425px)": {
             width: "95%",
         },
@@ -141,49 +144,75 @@ export default function Board() {
     ];
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        const { data } = await axios.post(`${url}/board`, formData, config);
-        setList([...list, data.board]);
-        setFormData({
-            _id: "",
-            title: "",
-            category: "",
-            priority: "",
-            description: "",
-            dueDate: "",
-            checklist: [],
-            attachment: "",
-            user: state.user._id, updatedAt: ''
-        });
-        handleCloseAdd();
-        setIsChecklistOpen(false)
+        if (formData.title) {
+            const { data } = await axios.post(`${url}/board`, formData, config);
+            setList([...list, data.board]);
+            setFormData({
+                _id: "",
+                title: "",
+                category: "",
+                priority: "",
+                description: "",
+                dueDate: "",
+                checklist: [],
+                attachment: "",
+                user: state.user._id, updatedAt: ''
+            });
+            handleCloseAdd();
+            setIsChecklistOpen(false)
+        } else {
+            toast.error(`Please Enter title`, {
+                position: "top-center",
+                autoClose: 1000,
+                hideProgressBar: true,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "colored",
+            });
+        }
     };
     const handleSubmitUpdate = async (e: React.FormEvent) => {
         e.preventDefault();
-        await axios.patch(`${url}/board/${formData._id}`, formData, config);
-        const updatedTask = {
-            todoTasks: task.todoTasks.map((item) =>
-                item._id === formData._id ? formData : item
-            ),
-            doingTasks: task.doingTasks.map((item) =>
-                item._id === formData._id ? formData : item
-            ),
-            doneTasks: task.doneTasks.map((item) =>
-                item._id === formData._id ? formData : item
-            ),
-        };
-        setTask(updatedTask);
-        setFormData({
-            _id: "",
-            title: "",
-            category: "",
-            priority: "",
-            description: "",
-            dueDate: "",
-            checklist: [],
-            attachment: "",
-            user: state.user._id, updatedAt: ''
-        });
-        handleCloseEdit();
+        if (formData.title) {
+            await axios.patch(`${url}/board/${formData._id}`, formData, config);
+            const updatedTask = {
+                todoTasks: task.todoTasks.map((item) =>
+                    item._id === formData._id ? formData : item
+                ),
+                doingTasks: task.doingTasks.map((item) =>
+                    item._id === formData._id ? formData : item
+                ),
+                doneTasks: task.doneTasks.map((item) =>
+                    item._id === formData._id ? formData : item
+                ),
+            };
+            setTask(updatedTask);
+            setFormData({
+                _id: "",
+                title: "",
+                category: "",
+                priority: "",
+                description: "",
+                dueDate: "",
+                checklist: [],
+                attachment: "",
+                user: state.user._id, updatedAt: ''
+            });
+            handleCloseEdit();
+        } else {
+            toast.error(`Please Enter title`, {
+                position: "top-center",
+                autoClose: 1000,
+                hideProgressBar: true,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "colored",
+            });
+        }
     }
     const handleSubmitDelete = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -288,7 +317,7 @@ export default function Board() {
                                     {e.checklist.length > 0 && <BsCheckSquareFill className="text-sm" />}
                                     {e.attachment && <IoAttach />}
                                 </div>
-                                <h1 className="flex items-center justify-between mt-1-">
+                                <h1 className="flex items-center justify-between mt-1">
                                     {e.title} <BiPencil className="pencil-icon" />
                                 </h1>
                             </div>
@@ -345,7 +374,7 @@ export default function Board() {
                                     {e.checklist.length > 0 && <BsCheckSquareFill className="text-sm" />}
                                     {e.attachment && <IoAttach />}
                                 </div>
-                                <h1 className="flex items-center justify-between">
+                                <h1 className="flex items-center justify-between mt-1">
                                     {e.title} <BiPencil className="pencil-icon" />
                                 </h1>
                             </div>
@@ -402,7 +431,7 @@ export default function Board() {
                                     {e.checklist.length > 0 && <BsCheckSquareFill className="text-sm" />}
                                     {e.attachment && <IoAttach />}
                                 </div>
-                                <h1 className="flex items-center justify-between">
+                                <h1 className="flex items-center justify-between mt-1">
                                     {e.title} <BiPencil className="pencil-icon" />
                                 </h1>
                             </div>
@@ -435,6 +464,7 @@ export default function Board() {
                 setIsChecklistOpen(false)
             }}>
                 <Box sx={style}>
+
                     <div className="md:flex md:gap-10">
                         <div className="md:w-[70%]">
                             <div className="flex items-center gap-3 ">
@@ -532,7 +562,7 @@ export default function Board() {
                             <p onClick={handleClickPriority} className="flex items-center gap-2 text-sm font-semibold mt-1 bg-gray-700 p-1 rounded-md hover:bg-gray-500 cursor-pointer w-[150px]"><BsArrowDownUp /> Priority</p>
                             <p onClick={handleClickCalender} className="flex items-center gap-2 text-sm font-semibold mt-1 bg-gray-700 p-1 rounded-md hover:bg-gray-500 cursor-pointer w-[150px]"><AiOutlineCalendar />Due Date</p>
                             <p onClick={toggleChecklist} className="flex items-center gap-2 text-sm font-semibold mt-1 bg-gray-700 p-1 rounded-md hover:bg-gray-500 cursor-pointer w-[150px]"><AiOutlineCheckSquare />Checklist</p>
-                            <p className="flex items-center gap-2 text-sm font-semibold mt-1 bg-gray-700 p-1 rounded-md hover:bg-gray-500 cursor-pointer w-[150px]"><IoAttach />Attachment</p>
+                            {/* <p className="flex items-center gap-2 text-sm font-semibold mt-1 bg-gray-700 p-1 rounded-md hover:bg-gray-500 cursor-pointer w-[150px]"><IoAttach />Attachment</p> */}
                         </div>
                     </div>
                     <button
@@ -613,6 +643,31 @@ export default function Board() {
                                     {formData.dueDate.split('00:00:00')[0]}
                                 </div>
                             }
+                            <div className="flex flex-col gap-2 mt-5 mb-3">
+                                {formData.checklist.length != 0 && <h1 className="text-base font-bold flex gap-3 items-center"><AiOutlineCheckSquare />Checklist :-</h1>}
+                                {formData.checklist?.map((e, index) => (
+                                    <div className="flex items-center gap-2">
+                                        <Checkbox checked={e.checked}
+                                            onChange={() => toggleChecklistItem(index)}
+                                            sx={{
+                                                color: pink[50],
+                                                '&.Mui-checked': {
+                                                    color: pink[50],
+                                                },
+                                            }}
+                                        />
+                                        <TextField id="standard-basic" variant="standard" type="text"
+                                            value={e.details}
+                                            autoComplete="off"
+                                            placeholder="Add a checklist item"
+                                            sx={{ input: { color: "white" } }}
+                                            onChange={(e) => updateChecklistItem(index, e.target.value)}
+                                        />
+                                    </div>
+                                ))}
+                                {/* <button onClick={addChecklistItem} className="mb-3 bg-[#b8bbbe] rounded text-gray-900 font-semibold px-2.5 py-1">Add Checklist Item</button> */}
+                            </div>
+
                         </div>
                         <div>
                             <h1 className="text-base font-bold flex gap-2 items-center">
@@ -621,8 +676,8 @@ export default function Board() {
                             <p onClick={handleClickMove} className="flex items-center gap-2 text-sm font-semibold mt-1 bg-gray-700 p-1 rounded-md hover:bg-gray-500 cursor-pointer w-[150px]"><BsArrowRight /> Move</p>
                             <p onClick={handleClickPriority} className="flex items-center gap-2 text-sm font-semibold mt-1 bg-gray-700 p-1 rounded-md hover:bg-gray-500 cursor-pointer w-[150px]"><BsArrowDownUp /> Priority</p>
                             <p onClick={handleClickCalender} className="flex items-center gap-2 text-sm font-semibold mt-1 bg-gray-700 p-1 rounded-md hover:bg-gray-500 cursor-pointer w-[150px]"><AiOutlineCalendar />Due Date</p>
-                            <p className="flex items-center gap-2 text-sm font-semibold mt-1 bg-gray-700 p-1 rounded-md hover:bg-gray-500 cursor-pointer w-[150px]"><AiOutlineCheckSquare />Checklist</p>
-                            <p className="flex items-center gap-2 text-sm font-semibold mt-1 bg-gray-700 p-1 rounded-md hover:bg-gray-500 cursor-pointer w-[150px]"><IoAttach />Attachment</p>
+                            <p onClick={addChecklistItem} className="flex items-center gap-2 text-sm font-semibold mt-1 bg-gray-700 p-1 rounded-md hover:bg-gray-500 cursor-pointer w-[150px]"><AiOutlineCheckSquare />Checklist</p>
+                            {/* <p className="flex items-center gap-2 text-sm font-semibold mt-1 bg-gray-700 p-1 rounded-md hover:bg-gray-500 cursor-pointer w-[150px]"><IoAttach />Attachment</p> */}
                             <p onClick={handleSubmitDelete} className="flex items-center gap-2 text-sm font-semibold mt-1 bg-gray-700 p-1 rounded-md hover:bg-gray-500 cursor-pointer w-[150px]"><MdOutlineDeleteOutline />Delete</p>
                         </div>
                     </div>
