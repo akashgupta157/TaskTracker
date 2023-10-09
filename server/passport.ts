@@ -6,8 +6,8 @@ passport2.use(
         {
             clientID: process.env.CLIENT_ID,
             clientSecret: process.env.CLIENT_SECRET,
-            callbackURL: "http://localhost:3000/auth/google/callback",
-            // callbackURL: "https://tasktracker-7obs.onrender.com/auth/google/callback",
+            // callbackURL: "http://localhost:3000/auth/google/callback",
+            callbackURL: "https://tasktracker-7obs.onrender.com/auth/google/callback",
             scope: ["profile", "email"],
         },
         async (request: any, accessToken: any, refreshToken: any, profile: any, callback: any) => {
