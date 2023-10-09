@@ -9,9 +9,11 @@ import { login, logout } from "../redux/auth/action";
 import { toast } from 'react-toastify';
 import { BsChevronDown } from 'react-icons/bs'
 import { useNavigate } from "react-router-dom";
+import { AiOutlineLoading3Quarters } from "react-icons/ai";
 export default function Navbar() {
     const nav = useNavigate()
     const state = useSelector((store: any) => store.authReducer)
+    const [loading, setLoading] = useState(false);
     const dispatch = useDispatch()
     // const googleAuth = () => {
     //     window.open(
@@ -62,6 +64,7 @@ export default function Navbar() {
     });
     const handleLogin = async (e: any) => {
         e.preventDefault()
+        setLoading(true)
         const { data } = await axios.post(`${url}/auth/login`, { email: formData.email, password: formData.password })
         if (data.auth) {
             toast.success(`${data.message}`, {
@@ -74,6 +77,7 @@ export default function Navbar() {
                 progress: undefined,
                 theme: "colored",
             });
+            setLoading(false)
             dispatch(login({ ...data.user, token: data.token }))
             localStorage.setItem("user", JSON.stringify({ ...data.user, token: data.token }))
             handleCloseLogin()
@@ -81,6 +85,7 @@ export default function Navbar() {
                 name: "", email: "", password: "",
             })
         } else {
+            setLoading(false)
             toast.error(`${data.message}`, {
                 position: "top-center",
                 autoClose: 1000,
@@ -95,6 +100,7 @@ export default function Navbar() {
     }
     const handleSignup = async (e: any) => {
         e.preventDefault()
+        setLoading(true)
         const { data } = await axios.post(`${url}/auth/register`, formData)
         if (data.auth) {
             toast.success(`${data.message}`, {
@@ -107,12 +113,14 @@ export default function Navbar() {
                 progress: undefined,
                 theme: "colored",
             });
+            setLoading(false)
             handleCloseSignup()
             handleOpenLogin()
             setFormData({
                 name: "", email: "", password: "",
             })
         } else {
+            setLoading(false)
             toast.error(`${data.message}`, {
                 position: "top-center",
                 autoClose: 1000,
@@ -219,7 +227,11 @@ export default function Navbar() {
                             InputLabelProps={{
                                 style: { color: '#fff' },
                             }} sx={{ input: { color: 'white' } }} />
-                        <button className="bg-yellow-400 px-5 py-1.5 rounded font-bold" type="submit">Log In</button>
+                        <button className="bg-yellow-400 px-5 py-1.5 rounded font-bold flex justify-center transform transition-transform duration-1000 ease-in-out hover:rotate-360" type="submit">
+                            {
+                                loading ? <AiOutlineLoading3Quarters className='text-2xl animate-spin' /> : 'Log In'
+                            }
+                        </button>
                     </form>
                     {/* <div className="flex text-white justify-center items-center gap-2 mt-2 mb-2">
                         <hr className="border-1 w-32 border-white" />or<hr className="border-1 w-32 border-white" />
@@ -255,7 +267,11 @@ export default function Navbar() {
                             InputLabelProps={{
                                 style: { color: '#fff' },
                             }} sx={{ input: { color: 'white' } }} />
-                        <button className="bg-yellow-400 px-5 py-1.5 rounded font-bold" type="submit">Sign up</button>
+                        <button className="bg-yellow-400 px-5 py-1.5 rounded font-bold flex justify-center transform transition-transform duration-1000 ease-in-out hover:rotate-360" type="submit">
+                            {
+                                loading ? <AiOutlineLoading3Quarters className='text-2xl animate-spin' /> : 'Sign up'
+                            }
+                        </button>
                     </form>
                     {/* <div className="flex text-white justify-center items-center gap-2 mt-2 mb-2">
                         <hr className="border-1 w-32 border-white" />or<hr className="border-1 w-32 border-white" />
