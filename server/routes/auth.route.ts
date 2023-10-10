@@ -91,8 +91,8 @@ router.post("/login", async (req: any, res: any) => {
   }
 });
 router.get("/logout", (req: any, res: any) => {
-  req.logout();
-  req.session = null;
+  // req.session = null;
+  req.session = {};
   res.redirect(process.env.CLIENT_URL);
 });
 module.exports = router;
