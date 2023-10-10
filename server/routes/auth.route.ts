@@ -20,7 +20,7 @@ router.get("/login/success", (req: any, res: any) => {
       token,
     });
   } catch (error) {
-    res.status(403).json({ error, message: "Not Authorized" });
+    res.json({ error, message: "Not Authorized" });
   }
 });
 router.get("/login/failed", (req: any, res: any) => {

@@ -22,12 +22,9 @@ export default function Navbar() {
         );
     };
     const getUser = async () => {
-        try {
-            const { data } = await axios.get(`${url}/auth/login/success`, { withCredentials: true });
-            dispatch(login({ ...data.user, token: data.token }))
-        } catch (err) {
-            console.log(err);
-        }
+        const { data } = await axios.get(`${url}/auth/login/success`, { withCredentials: true });
+        dispatch(login({ ...data.user, token: data.token }))
+        console.log(data)
     };
     useEffect(() => {
         getUser();
