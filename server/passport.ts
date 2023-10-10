@@ -8,6 +8,7 @@ passport2.use(
       clientSecret: process.env.CLIENT_SECRET,
       // callbackURL: "http://localhost:3000/auth/google/callback",
       callbackURL: "https://tasktracker-7obs.onrender.com/auth/google/callback",
+      userProfileURL: "https://www.googleapis.com/oauth2/v3/userinfo",
       scope: ["profile", "email"],
     },
     async (
@@ -40,7 +41,8 @@ passport2.use(
 passport2.serializeUser((user: any, done: any) => {
   done(null, user);
 });
-
-passport2.deserializeUser((user: any, done: any) => {
-  done(null, user);
+passport2.deserializeUser((id: any, done: any) => {
+  UserModel.findById(id, function (err: any, user: any) {
+    done(err, user);
+  });
 });
