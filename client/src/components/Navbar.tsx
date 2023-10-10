@@ -15,20 +15,6 @@ export default function Navbar() {
     const state = useSelector((store: any) => store.authReducer)
     const [loading, setLoading] = useState(false);
     const dispatch = useDispatch()
-    const googleAuth = () => {
-        window.open(
-            `${url}/auth/google/callback`,
-            "_self"
-        );
-    };
-    const getUser = async () => {
-        const { data } = await axios.get(`${url}/auth/login/success`, { withCredentials: true });
-        dispatch(login({ ...data.user, token: data.token }))
-        console.log(data)
-    };
-    useEffect(() => {
-        getUser();
-    }, []);
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const open = Boolean(anchorEl);
     const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -236,7 +222,6 @@ export default function Navbar() {
                     <GoogleButton
                         className="m-auto"
                         label='Login with Google'
-                        onClick={googleAuth}
                     />
                 </Box>
             </Modal>
@@ -276,7 +261,6 @@ export default function Navbar() {
                     <GoogleButton
                         className="m-auto"
                         label='Signup with Google'
-                        onClick={googleAuth}
                     />
                 </Box>
             </Modal>

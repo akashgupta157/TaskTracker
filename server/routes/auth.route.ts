@@ -4,43 +4,6 @@ const passport1 = require("passport");
 const bcrypt = require("bcrypt");
 const userModel = require("../models/user.model");
 const jwt = require("jsonwebtoken");
-router.get("/login/success", (req: any, res: any) => {
-  try {
-    const token = jwt.sign(
-      { userId: req.user._id, user: req.user.email },
-      process.env.secretKey,
-      {
-        expiresIn: "1d",
-      }
-    );
-    res.status(200).json({
-      error: false,
-      message: "Successfully Loged In",
-      user: req.user,
-      token,
-    });
-  } catch (error) {
-    res.status(403).json({ error, message: "Not Authorized" });
-  }
-});
-router.get("/login/failed", (req: any, res: any) => {
-  res.status(401).json({
-    error: true,
-    message: "Log in failure",
-  });
-});
-router.get("/google", passport1.authenticate("google", ["profile", "email"]));
-router.get(
-  "/google/callback",
-  passport1.authenticate("google", {
-    successRedirect: process.env.CLIENT_URL,
-    failureRedirect: "/login/failed",
-  })
-);
-router.get("/logout", (req: any, res: any) => {
-  req.logout();
-  res.redirect(process.env.CLIENT_URL);
-});
 router.post("/register", async (req: any, res: any) => {
   try {
     const { email, password } = req.body;
@@ -91,8 +54,7 @@ router.post("/login", async (req: any, res: any) => {
   }
 });
 router.get("/logout", (req: any, res: any) => {
-  // req.session = null;
-  req.session = {};
+  req.session = null;
   res.redirect(process.env.CLIENT_URL);
 });
 module.exports = router;
