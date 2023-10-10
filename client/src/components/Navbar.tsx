@@ -10,6 +10,7 @@ import { toast } from 'react-toastify';
 import { BsChevronDown } from 'react-icons/bs'
 import { useNavigate } from "react-router-dom";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
+import { useGoogleLogin } from '@react-oauth/google';
 export default function Navbar() {
     const nav = useNavigate()
     const state = useSelector((store: any) => store.authReducer)
@@ -45,6 +46,16 @@ export default function Navbar() {
     const [formData, setFormData] = useState({
         name: "", email: "", password: "",
     });
+    const handleGoogle = useGoogleLogin({ onSuccess: handleGoogleLoginSuccess });
+    async function handleGoogleLoginSuccess(tokenResponse: { access_token: any; }) {
+        const accessToken = tokenResponse.access_token;
+        const { data } = await axios.post(`${url}/auth/google/login`, { googleAccessToken: accessToken })
+        console.log(data)
+        dispatch(login({ ...data.user, token: data.token }))
+        localStorage.setItem("user", JSON.stringify({ ...data.user, token: data.token }))
+        handleCloseLogin()
+        handleCloseSignup()
+    }
     const handleLogin = async (e: any) => {
         e.preventDefault()
         setLoading(true)
@@ -222,6 +233,7 @@ export default function Navbar() {
                     <GoogleButton
                         className="m-auto"
                         label='Login with Google'
+                        onClick={() => handleGoogle()}
                     />
                 </Box>
             </Modal>
@@ -261,6 +273,7 @@ export default function Navbar() {
                     <GoogleButton
                         className="m-auto"
                         label='Signup with Google'
+                        onClick={() => handleGoogle()}
                     />
                 </Box>
             </Modal>

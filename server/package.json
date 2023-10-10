@@ -18,7 +18,9 @@
     "typescript": "^5.2.2"
   },
   "dependencies": {
+    "axios": "^1.5.1",
     "bcrypt": "^5.1.1",
+    "config": "^3.3.9",
     "cookie-session": "^2.0.0",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",

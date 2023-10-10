@@ -4,6 +4,46 @@ const passport1 = require("passport");
 const bcrypt = require("bcrypt");
 const userModel = require("../models/user.model");
 const jwt = require("jsonwebtoken");
+const axios = require("axios");
+const config = require("config");
+router.post("/google/login", async (req: any, res: any) => {
+  const { googleAccessToken } = req.body;
+  const { data } = await axios.get(
+    "https://www.googleapis.com/oauth2/v3/userinfo",
+    {
+      headers: {
+        Authorization: `Bearer ${googleAccessToken}`,
+      },
+    }
+  );
+  let existingUser = await userModel.findOne({
+    email: data.email,
+  });
+  if (existingUser) {
+    const token = jwt.sign(
+      { userId: existingUser._id, user: existingUser.email },
+      process.env.secretKey,
+      {
+        expiresIn: "1d",
+      }
+    );
+    return res.json({ user: existingUser, token });
+  }
+  const user = new userModel({
+    name: data.displayName,
+    email: data.email,
+    profilePicture: data.picture,
+  });
+  await user.save();
+  const token = jwt.sign(
+    { userId: user._id, user: user.email },
+    process.env.secretKey,
+    {
+      expiresIn: "1d",
+    }
+  );
+  res.json({ user, token });
+});
 router.post("/register", async (req: any, res: any) => {
   try {
     const { email, password } = req.body;
