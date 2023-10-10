@@ -1,5 +1,5 @@
 import axios from "axios";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { url } from "./url";
 import { FiMenu } from 'react-icons/fi'
 import { Menu, MenuItem, Modal, Box, TextField, Avatar } from "@mui/material";
