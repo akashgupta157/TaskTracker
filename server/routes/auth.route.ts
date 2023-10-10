@@ -30,10 +30,11 @@ router.post("/google/login", async (req: any, res: any) => {
     return res.json({ user: existingUser, token });
   }
   const user = new userModel({
-    name: data.displayName,
     email: data.email,
     profilePicture: data.picture,
+    name: data.name,
   });
+
   await user.save();
   const token = jwt.sign(
     { userId: user._id, user: user.email },
