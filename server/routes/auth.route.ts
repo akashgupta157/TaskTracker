@@ -5,7 +5,7 @@ const bcrypt = require("bcrypt");
 const userModel = require("../models/user.model");
 const jwt = require("jsonwebtoken");
 router.get("/login/success", (req: any, res: any) => {
-  if (req.user) {
+  try {
     const token = jwt.sign(
       { userId: req.user._id, user: req.user.email },
       process.env.secretKey,
@@ -19,8 +19,8 @@ router.get("/login/success", (req: any, res: any) => {
       user: req.user,
       token,
     });
-  } else {
-    res.status(403).json({ error: true, message: "Not Authorized" });
+  } catch (error) {
+    res.status(403).json({ error, message: "Not Authorized" });
   }
 });
 router.get("/login/failed", (req: any, res: any) => {
