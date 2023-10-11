@@ -11,6 +11,7 @@ import { BsChevronDown } from 'react-icons/bs'
 import { useNavigate } from "react-router-dom";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
 import { useGoogleLogin } from '@react-oauth/google';
+import { setPageLoad } from "../redux/pageLoad/action";
 export default function Navbar() {
     const nav = useNavigate()
     const state = useSelector((store: any) => store.authReducer)
@@ -48,13 +49,14 @@ export default function Navbar() {
     });
     const handleGoogle = useGoogleLogin({ onSuccess: handleGoogleLoginSuccess });
     async function handleGoogleLoginSuccess(tokenResponse: { access_token: any; }) {
+        dispatch(setPageLoad(true))
         const accessToken = tokenResponse.access_token;
         const { data } = await axios.post(`${url}/auth/google/login`, { googleAccessToken: accessToken })
-        console.log(data)
         dispatch(login({ ...data.user, token: data.token }))
         localStorage.setItem("user", JSON.stringify({ ...data.user, token: data.token }))
         handleCloseLogin()
         handleCloseSignup()
+        dispatch(setPageLoad(false))
     }
     const handleLogin = async (e: any) => {
         e.preventDefault()
