@@ -9,7 +9,6 @@ import { useSelector } from "react-redux";
 import { LinearProgress } from "@mui/material";
 export default function App() {
   const load = useSelector((state: any) => state.pageLoadReducer)
-  console.log(load)
   return (
     <>
       {
