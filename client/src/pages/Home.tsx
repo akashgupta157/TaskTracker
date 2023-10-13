@@ -1,6 +1,8 @@
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify';
+import { useEffect } from "react";
+import { url } from '../components/url';
 export default function Home() {
   const nav = useNavigate();
   const auth = useSelector((store: any) => store.authReducer.isAuthenticated);
@@ -20,6 +22,13 @@ export default function Home() {
       })
     }
   }
+  const getBackend = async () => {
+    const { data } = await axios.get(`${url}/user`);
+    console.log(data);
+  };
+  useEffect(() => {
+    getBackend();
+  }, []);
   return (
     <div className="min-h-[90vh] bg-[#1c2025] flex flex-col-reverse pb-5 md:flex-row md:pb-0 md:items-center overflow-hidden md:justify-around">
       <div className="px-5 flex flex-col gap-6 h-[100%] md:w-[40%]">
