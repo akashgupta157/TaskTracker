@@ -6,6 +6,13 @@ const userModel = require("../models/user.model");
 const jwt = require("jsonwebtoken");
 const axios = require("axios");
 const config = require("config");
+router.get("/", async (req, res) => {
+  try {
+    res.send("Welcome User");
+  } catch (error) {
+    res.status(404).send(error.message);
+  }
+});
 router.post("/google/login", async (req: any, res: any) => {
   const { googleAccessToken } = req.body;
   const { data } = await axios.get(
