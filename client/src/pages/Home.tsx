@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify';
 import { useEffect } from "react";
 import { url } from '../components/url';
+import axios from "axios";
 export default function Home() {
   const nav = useNavigate();
   const auth = useSelector((store: any) => store.authReducer.isAuthenticated);
