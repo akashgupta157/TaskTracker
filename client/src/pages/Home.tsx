@@ -24,7 +24,7 @@ export default function Home() {
     }
   }
   const getBackend = async () => {
-    const { data } = await axios.get(`${url}/user`);
+    const { data } = await axios.get(`${url}/auth`);
     console.log(data);
   };
   useEffect(() => {
