@@ -14,6 +14,7 @@ import Calendar from "react-calendar";
 import 'react-calendar/dist/Calendar.css';
 import { pink } from "@mui/material/colors";
 import { toast } from "react-toastify";
+import { DragDropContext, Draggable, DropResult, Droppable } from 'react-beautiful-dnd'
 interface FormData {
     updatedAt: string | number | Date;
     _id: string;
@@ -56,9 +57,9 @@ export default function Board() {
     useEffect(() => {
         fetchData();
     }, []);
-    useEffect(() => {
-        fetchData();
-    }, [task]);
+    // useEffect(() => {
+    //     fetchData();
+    // }, [task]);
     const [openAdd, setOpenAdd] = useState(false);
     const handleOpenAdd = () => setOpenAdd(true);
     const handleCloseAdd = () => setOpenAdd(false);
@@ -176,7 +177,7 @@ export default function Board() {
     const handleSubmitUpdate = async (e: React.FormEvent) => {
         e.preventDefault();
         if (formData.title) {
-            await axios.patch(`${url}/board/${formData._id}`, formData, config);
+            const { data } = await axios.patch(`${url}/board/${formData._id}`, formData, config);
             const updatedTask = {
                 todoTasks: task.todoTasks.map((item) =>
                     item._id === formData._id ? formData : item
@@ -188,7 +189,18 @@ export default function Board() {
                     item._id === formData._id ? formData : item
                 ),
             };
-            setTask(updatedTask);
+            console.log(data.board)
+            let t1 = updatedTask.todoTasks.filter((board) => board.category == "To do")
+            let t2 = updatedTask.doingTasks.filter((board) => board.category == "Doing")
+            let t3 = updatedTask.doneTasks.filter((board) => board.category == "Done")
+            if (data.board.category === "To do") {
+                t1 = [...t1, data.board]
+            } else if (data.board.category === 'Doing') {
+                t2 = [...t2, data.board]
+            } else {
+                t3 = [...t3, data.board]
+            }
+            setTask({ todoTasks: t1, doingTasks: t2, doneTasks: t3 })
             setFormData({
                 _id: "",
                 title: "",
@@ -283,182 +295,274 @@ export default function Board() {
         updatedChecklist[index].checked = !updatedChecklist[index].checked;
         setFormData({ ...formData, checklist: updatedChecklist });
     };
+    const onDragEnd = async (result: DropResult) => {
+        // console.log(result)
+        const { draggableId, destination, source } = result
+        if (!destination) return
+        if (destination.droppableId === source.droppableId && destination.index === source.index) return
+        let t
+        let add, todo = task.todoTasks, doing = task.doingTasks, done = task.doneTasks
+        if (source.droppableId === 'To do') {
+            add = todo[source.index]
+            add = { ...add, category: destination.droppableId }
+            todo.splice(source.index, 1)
+            t = todo.filter((board) => board.category == "To do")
+            setTask({ ...task, todoTasks: t })
+            await axios.patch(`${url}/board/${draggableId}`, add, config);
+        } else if (source.droppableId === 'Doing') {
+            add = doing[source.index]
+            add = { ...add, category: destination.droppableId }
+            doing.splice(source.index, 1)
+            t = doing.filter((board) => board.category == "Doing")
+            setTask({ ...task, doingTasks: t })
+            await axios.patch(`${url}/board/${draggableId}`, add, config);
+        } else {
+            add = done[source.index]
+            add = { ...add, category: destination.droppableId }
+            done.splice(source.index, 1)
+            t = done.filter((board) => board.category == "Done")
+            setTask({ ...task, doneTasks: t })
+            await axios.patch(`${url}/board/${draggableId}`, add, config);
+        }
+        if (destination.droppableId === "To do") {
+            todo.splice(destination.index, 0, add);
+            setTask({ ...task, todoTasks: todo })
+        } else if (destination.droppableId === 'Doing') {
+            doing.splice(destination.index, 0, add);
+            setTask({ ...task, doingTasks: doing })
+        } else {
+            done.splice(destination.index, 0, add);
+            setTask({ ...task, doneTasks: done })
+        }
+    }
     return (
         <>
-            <div className="min-h-[90vh] bg-[#1e3a8a] p-5 flex flex-col gap-5 md:flex-row">
-                <div className="bg-black text-[#b6c2cf] px-5 py-3 rounded-lg flex flex-col md:w-[25%] h-max">
-                    <h1 className="text-base font-semibold p-1">To do</h1>
-                    <div className="min-h-[2vh] flex flex-col gap-2">
-                        {task.todoTasks.map((e) => (
-                            <div
-                                key={e._id}
-                                className="task hover:bg-[#363b3f] p-2 rounded bg-[#25282a] cursor-pointer"
-                                onClick={() => {
-                                    setFormData(e);
-                                    handleOpenEdit()
-                                }}
-                            >
+            <DragDropContext onDragEnd={onDragEnd}>
+                <div className="min-h-[90vh] bg-[#1e3a8a] p-5 flex flex-col gap-5 md:flex-row">
+                    <div className="bg-black text-[#b6c2cf] px-5 py-3 rounded-lg flex flex-col md:w-[25%] h-max">
+                        <h1 className="text-base font-semibold p-1">To do</h1>
+                        <Droppable droppableId="To do">
+                            {
+                                (provided) => (
+                                    <div className="min-h-[2vh] flex flex-col gap-2" ref={provided.innerRef} {...provided.droppableProps}>
+                                        {task.todoTasks.map((e, i) => (
+                                            <Draggable draggableId={e._id.toString()} index={i}>
+                                                {
+                                                    (provided) => (
+                                                        <div
+                                                            key={e._id}
+                                                            className="task hover:bg-[#363b3f] p-2 rounded bg-[#25282a] cursor-pointer"
+                                                            onClick={() => {
+                                                                setFormData(e);
+                                                                handleOpenEdit()
+                                                            }}
+                                                            {...provided.draggableProps}
+                                                            {...provided.dragHandleProps}
+                                                            ref={provided.innerRef}
+                                                        >
+                                                            <div className="flex gap-2 items-center">
+                                                                {e.priority && (
+                                                                    <p
+                                                                        className={`w-8 my-1 h-2 rounded-br-3xl ${e.priority == "High"
+                                                                            ? "bg-red-700"
+                                                                            : e.priority == "Mid"
+                                                                                ? "bg-yellow-600"
+                                                                                : e.priority == "Low"
+                                                                                    ? "bg-green-600"
+                                                                                    : null
+                                                                            }`}
+                                                                    ></p>
+                                                                )}
+                                                                {e.description && <BsJustifyLeft />}
+                                                                {e.dueDate && <AiOutlineCalendar />}
+                                                                {e.checklist.length > 0 && <BsCheckSquareFill className="text-sm" />}
+                                                                {e.attachment && <IoAttach />}
+                                                            </div>
+                                                            <h1 className="flex items-center justify-between mt-1">
+                                                                {e.title} <BiPencil className="pencil-icon" />
+                                                            </h1>
+                                                        </div>
+                                                    )
+                                                }
 
-                                <div className="flex gap-2 items-center">
-                                    {e.priority && (
-                                        <p
-                                            className={`w-8 my-1 h-2 rounded-br-3xl ${e.priority == "High"
-                                                ? "bg-red-700"
-                                                : e.priority == "Mid"
-                                                    ? "bg-yellow-600"
-                                                    : e.priority == "Low"
-                                                        ? "bg-green-600"
-                                                        : null
-                                                }`}
-                                        ></p>
-                                    )}
-                                    {e.description && <BsJustifyLeft />}
-                                    {e.dueDate && <AiOutlineCalendar />}
-                                    {e.checklist.length > 0 && <BsCheckSquareFill className="text-sm" />}
-                                    {e.attachment && <IoAttach />}
-                                </div>
-                                <h1 className="flex items-center justify-between mt-1">
-                                    {e.title} <BiPencil className="pencil-icon" />
-                                </h1>
-                            </div>
-                        ))}
+                                            </Draggable>
+                                        ))}
+                                        {provided.placeholder}
+                                    </div>
+                                )
+                            }
+
+                        </Droppable>
+                        <button
+                            className="flex items-center text-base font-semibold gap-2 cursor-pointer hover:bg-[#3f3f46] p-1 rounded-lg mt-2"
+                            onClick={() => {
+                                handleOpenAdd();
+                                setFormData({
+                                    _id: "",
+                                    title: "",
+                                    category: "To do",
+                                    priority: "",
+                                    description: "",
+                                    dueDate: "",
+                                    checklist: [],
+                                    attachment: "",
+                                    user: state.user._id, updatedAt: ''
+                                });
+                            }}
+                        >
+                            <AiOutlinePlus />
+                            Add a card
+                        </button>
                     </div>
-                    <button
-                        className="flex items-center text-base font-semibold gap-2 cursor-pointer hover:bg-[#3f3f46] p-1 rounded-lg mt-2"
-                        onClick={() => {
-                            handleOpenAdd();
-                            setFormData({
-                                _id: "",
-                                title: "",
-                                category: "To do",
-                                priority: "",
-                                description: "",
-                                dueDate: "",
-                                checklist: [],
-                                attachment: "",
-                                user: state.user._id, updatedAt: ''
-                            });
-                        }}
-                    >
-                        <AiOutlinePlus />
-                        Add a card
-                    </button>
-                </div>
-                <div className="bg-black text-[#b6c2cf] px-5 py-3 rounded-lg flex flex-col md:w-[25%] h-max">
-                    <h1 className="text-base font-semibold p-1">Doing</h1>
-                    <div className="min-h-[2vh] flex flex-col gap-2">
-                        {task.doingTasks.map((e) => (
-                            <div
-                                key={e._id}
-                                className="task hover:bg-[#363b3f] p-2 rounded bg-[#25282a] cursor-pointer"
-                                onClick={() => {
-                                    setFormData(e);
-                                    handleOpenEdit()
-                                }}
-                            >
-                                <div className="flex gap-2 items-center">
-                                    {e.priority && (
-                                        <p
-                                            className={`w-8 my-1 h-2 rounded-br-3xl ${e.priority == "High"
-                                                ? "bg-red-700"
-                                                : e.priority == "Mid"
-                                                    ? "bg-yellow-600"
-                                                    : e.priority == "Low"
-                                                        ? "bg-green-600"
-                                                        : null
-                                                }`}
-                                        ></p>
-                                    )}
-                                    {e.description && <BsJustifyLeft />}
-                                    {e.dueDate && <AiOutlineCalendar />}
-                                    {e.checklist.length > 0 && <BsCheckSquareFill className="text-sm" />}
-                                    {e.attachment && <IoAttach />}
-                                </div>
-                                <h1 className="flex items-center justify-between mt-1">
-                                    {e.title} <BiPencil className="pencil-icon" />
-                                </h1>
-                            </div>
-                        ))}
+                    <div className="bg-black text-[#b6c2cf] px-5 py-3 rounded-lg flex flex-col md:w-[25%] h-max">
+                        <h1 className="text-base font-semibold p-1">Doing</h1>
+                        <Droppable droppableId="Doing">
+                            {
+                                (provided) => (
+                                    <div className="min-h-[2vh] flex flex-col gap-2" ref={provided.innerRef} {...provided.droppableProps}>
+                                        {task.doingTasks.map((e, i) => (
+                                            <Draggable draggableId={e._id.toString()} index={i}>
+                                                {
+                                                    (provided) => (
+                                                        <div
+                                                            key={e._id}
+                                                            className="task hover:bg-[#363b3f] p-2 rounded bg-[#25282a] cursor-pointer"
+                                                            onClick={() => {
+                                                                setFormData(e);
+                                                                handleOpenEdit()
+                                                            }}
+                                                            {...provided.draggableProps}
+                                                            {...provided.dragHandleProps}
+                                                            ref={provided.innerRef}
+                                                        >
+                                                            <div className="flex gap-2 items-center">
+                                                                {e.priority && (
+                                                                    <p
+                                                                        className={`w-8 my-1 h-2 rounded-br-3xl ${e.priority == "High"
+                                                                            ? "bg-red-700"
+                                                                            : e.priority == "Mid"
+                                                                                ? "bg-yellow-600"
+                                                                                : e.priority == "Low"
+                                                                                    ? "bg-green-600"
+                                                                                    : null
+                                                                            }`}
+                                                                    ></p>
+                                                                )}
+                                                                {e.description && <BsJustifyLeft />}
+                                                                {e.dueDate && <AiOutlineCalendar />}
+                                                                {e.checklist.length > 0 && <BsCheckSquareFill className="text-sm" />}
+                                                                {e.attachment && <IoAttach />}
+                                                            </div>
+                                                            <h1 className="flex items-center justify-between mt-1">
+                                                                {e.title} <BiPencil className="pencil-icon" />
+                                                            </h1>
+                                                        </div>
+                                                    )
+                                                }
+
+                                            </Draggable>
+                                        ))}
+                                        {provided.placeholder}
+                                    </div>
+                                )
+                            }
+
+                        </Droppable>
+                        <button
+                            className="flex items-center text-base font-semibold gap-2 cursor-pointer hover:bg-[#3f3f46] p-1 rounded-lg mt-2"
+                            onClick={() => {
+                                handleOpenAdd();
+                                setFormData({
+                                    _id: "",
+                                    title: "",
+                                    category: "Doing",
+                                    priority: "",
+                                    description: "",
+                                    dueDate: "",
+                                    checklist: [],
+                                    attachment: "",
+                                    user: state.user._id, updatedAt: ''
+                                });
+                            }}
+                        >
+                            <AiOutlinePlus />
+                            Add a card
+                        </button>
                     </div>
-                    <button
-                        className="flex items-center text-base font-semibold gap-2 cursor-pointer hover:bg-[#3f3f46] p-1 rounded-lg mt-2"
-                        onClick={() => {
-                            handleOpenAdd();
-                            setFormData({
-                                _id: "",
-                                title: "",
-                                category: "Doing",
-                                priority: "",
-                                description: "",
-                                dueDate: "",
-                                checklist: [],
-                                attachment: "",
-                                user: state.user._id, updatedAt: ''
-                            });
-                        }}
-                    >
-                        <AiOutlinePlus />
-                        Add a card
-                    </button>
-                </div>
-                <div className="bg-black text-[#b6c2cf] px-5 py-3 rounded-lg flex flex-col md:w-[25%] h-max">
-                    <h1 className="text-base font-semibold p-1">Done</h1>
-                    <div className="min-h-[2vh] flex flex-col gap-2">
-                        {task.doneTasks.map((e) => (
-                            <div
-                                key={e._id}
-                                className="task hover:bg-[#363b3f] p-2 rounded bg-[#25282a] cursor-pointer"
-                                onClick={() => {
-                                    setFormData(e);
-                                    handleOpenEdit()
-                                }}
-                            >
-                                <div className="flex gap-2 items-center">
-                                    {e.priority && (
-                                        <p
-                                            className={`w-8 my-1 h-2 rounded-br-3xl ${e.priority == "High"
-                                                ? "bg-red-700"
-                                                : e.priority == "Mid"
-                                                    ? "bg-yellow-600"
-                                                    : e.priority == "Low"
-                                                        ? "bg-green-600"
-                                                        : null
-                                                }`}
-                                        ></p>
-                                    )}
-                                    {e.description && <BsJustifyLeft />}
-                                    {e.dueDate && <AiOutlineCalendar />}
-                                    {e.checklist.length > 0 && <BsCheckSquareFill className="text-sm" />}
-                                    {e.attachment && <IoAttach />}
+                    <div className="bg-black text-[#b6c2cf] px-5 py-3 rounded-lg flex flex-col md:w-[25%] h-max">
+                        <h1 className="text-base font-semibold p-1">Done</h1>
+                        <Droppable droppableId="Done">
+                            {(provided) => (
+                                <div className="min-h-[2vh] flex flex-col gap-2" ref={provided.innerRef} {...provided.droppableProps}>
+                                    {task.doneTasks.map((e, i) => (
+                                        <Draggable draggableId={e._id.toString()} index={i}>
+                                            {
+                                                (provided) => (
+                                                    <div
+                                                        key={e._id}
+                                                        className="task hover:bg-[#363b3f] p-2 rounded bg-[#25282a] cursor-pointer"
+                                                        onClick={() => {
+                                                            setFormData(e);
+                                                            handleOpenEdit()
+                                                        }}
+                                                        {...provided.draggableProps}
+                                                        {...provided.dragHandleProps}
+                                                        ref={provided.innerRef}
+                                                    >
+                                                        <div className="flex gap-2 items-center">
+                                                            {e.priority && (
+                                                                <p
+                                                                    className={`w-8 my-1 h-2 rounded-br-3xl ${e.priority == "High"
+                                                                        ? "bg-red-700"
+                                                                        : e.priority == "Mid"
+                                                                            ? "bg-yellow-600"
+                                                                            : e.priority == "Low"
+                                                                                ? "bg-green-600"
+                                                                                : null
+                                                                        }`}
+                                                                ></p>
+                                                            )}
+                                                            {e.description && <BsJustifyLeft />}
+                                                            {e.dueDate && <AiOutlineCalendar />}
+                                                            {e.checklist.length > 0 && <BsCheckSquareFill className="text-sm" />}
+                                                            {e.attachment && <IoAttach />}
+                                                        </div>
+                                                        <h1 className="flex items-center justify-between mt-1">
+                                                            {e.title} <BiPencil className="pencil-icon" />
+                                                        </h1>
+                                                    </div>
+                                                )
+                                            }
+                                        </Draggable>
+                                    ))}
+                                    {provided.placeholder}
                                 </div>
-                                <h1 className="flex items-center justify-between mt-1">
-                                    {e.title} <BiPencil className="pencil-icon" />
-                                </h1>
-                            </div>
-                        ))}
+                            )}
+                        </Droppable>
+
+                        <button
+                            className="flex items-center text-base font-semibold gap-2 cursor-pointer hover:bg-[#3f3f46] p-1 rounded-lg mt-2"
+                            onClick={() => {
+                                handleOpenAdd();
+                                setFormData({
+                                    _id: "",
+                                    title: "",
+                                    category: "Done",
+                                    priority: "",
+                                    description: "",
+                                    dueDate: "",
+                                    checklist: [],
+                                    attachment: "",
+                                    user: state.user._id, updatedAt: ''
+                                });
+                            }}
+                        >
+                            <AiOutlinePlus />
+                            Add a card
+                        </button>
                     </div>
-                    <button
-                        className="flex items-center text-base font-semibold gap-2 cursor-pointer hover:bg-[#3f3f46] p-1 rounded-lg mt-2"
-                        onClick={() => {
-                            handleOpenAdd();
-                            setFormData({
-                                _id: "",
-                                title: "",
-                                category: "Done",
-                                priority: "",
-                                description: "",
-                                dueDate: "",
-                                checklist: [],
-                                attachment: "",
-                                user: state.user._id, updatedAt: ''
-                            });
-                        }}
-                    >
-                        <AiOutlinePlus />
-                        Add a card
-                    </button>
                 </div>
-            </div>
+            </DragDropContext>
             <Modal open={openAdd} onClose={() => {
                 handleCloseAdd()
                 setIsChecklistOpen(false)
