@@ -6,6 +6,7 @@ TaskTracker is a feature-rich task management web application meticulously craft
 - User-Friendly Interface
 - Responsive Design
 - Task Creation
+- Task Drag and Drop
 - Task Categories
 ## Technologies Used
 - `Typescript`
