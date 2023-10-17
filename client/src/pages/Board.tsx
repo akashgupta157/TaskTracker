@@ -303,21 +303,21 @@ export default function Board() {
             todo.splice(source.index, 1)
             t = todo.filter((board) => board.category == "To do")
             setTask({ ...task, todoTasks: t })
-            await axios.patch(`${url}/board/${draggableId}`, add, config);
+            axios.patch(`${url}/board/${draggableId}`, add, config);
         } else if (source.droppableId === 'Doing') {
             add = doing[source.index]
             add = { ...add, category: destination.droppableId }
             doing.splice(source.index, 1)
             t = doing.filter((board) => board.category == "Doing")
             setTask({ ...task, doingTasks: t })
-            await axios.patch(`${url}/board/${draggableId}`, add, config);
+            axios.patch(`${url}/board/${draggableId}`, add, config);
         } else {
             add = done[source.index]
             add = { ...add, category: destination.droppableId }
             done.splice(source.index, 1)
             t = done.filter((board) => board.category == "Done")
             setTask({ ...task, doneTasks: t })
-            await axios.patch(`${url}/board/${draggableId}`, add, config);
+            axios.patch(`${url}/board/${draggableId}`, add, config);
         }
         if (destination.droppableId === "To do") {
             todo.splice(destination.index, 0, add);
@@ -681,12 +681,20 @@ export default function Board() {
                             {/* <p className="flex items-center gap-2 text-sm font-semibold mt-1 bg-gray-700 p-1 rounded-md hover:bg-gray-500 cursor-pointer w-[150px]"><IoAttach />Attachment</p> */}
                         </div>
                     </div>
-                    <button
-                        className="bg-[#579DFF] rounded text-gray-900 font-semibold px-2.5 py-1"
-                        onClick={handleSubmit}
-                    >
-                        Save
-                    </button>
+                    <div className="flex gap-2">
+                        <button
+                            className="bg-[#579DFF] rounded text-gray-900 font-semibold px-2.5 py-1 mt-3"
+                            onClick={handleSubmit}
+                        >
+                            Save
+                        </button>
+                        <button
+                            className="bg-[#ffffff] rounded text-gray-900 font-semibold px-2.5 py-1 mt-3"
+                            onClick={handleCloseAdd}
+                        >
+                            Close
+                        </button>
+                    </div>
                 </Box>
             </Modal>
             <Modal open={openEdit} onClose={() => {
@@ -797,13 +805,21 @@ export default function Board() {
                             <p onClick={handleSubmitDelete} className="flex items-center gap-2 text-sm font-semibold mt-1 bg-gray-700 p-1 rounded-md hover:bg-gray-500 cursor-pointer w-[150px]"><MdOutlineDeleteOutline />Delete</p>
                         </div>
                     </div>
-                    <div className="flex items-end justify-between">
-                        <button
-                            className="bg-[#579DFF] rounded text-gray-900 font-semibold px-2.5 py-1"
-                            onClick={handleSubmitUpdate}
-                        >
-                            Update
-                        </button>
+                    <div className="flex md:items-end flex-col md:flex-row md:justify-between">
+                        <div className="flex gap-2">
+                            <button
+                                className="bg-[#579DFF] rounded text-gray-900 font-semibold px-2.5 py-1 mt-3"
+                                onClick={handleSubmitUpdate}
+                            >
+                                Update
+                            </button>
+                            <button
+                                className="bg-[#ffffff] rounded text-gray-900 font-semibold px-2.5 py-1 mt-3"
+                                onClick={handleCloseEdit}
+                            >
+                                Close
+                            </button>
+                        </div>
                         <p>Last Updated at: {new Date(formData?.updatedAt).toLocaleString()}</p></div>
                 </Box>
             </Modal>
