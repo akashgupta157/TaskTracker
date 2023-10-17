@@ -1,72 +1,90 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
 * {
   padding: 0;
   margin: 0;
   font-family: "Raleway", sans-serif;
 }
+
 .MuiOutlinedInput-notchedOutline {
   border-color: white !important;
 }
+
 .MuiOutlinedInput-input:-webkit-autofill {
   -webkit-box-shadow: 0 0 0 100px #000 inset !important;
   -webkit-text-fill-color: #fff !important;
 }
-.quill > * {
+
+.quill>* {
   border-color: inherit !important;
   color: inherit !important;
 }
-.quill > .ql-toolbar {
+
+.quill>.ql-toolbar {
   /* border radius of the toolbar */
   border-radius: 10px 10px 0 0;
 }
-.quill > .ql-container {
+
+.quill>.ql-container {
   /* border radius of the container and for font size*/
   font-size: inherit;
   border-radius: 0 0 10px 10px;
 }
+
 .ql-toolbar.ql-snow .ql-picker-label {
   color: inherit !important;
   opacity: 0.76;
 }
+
 .ql-snow .ql-picker {
   color: inherit !important;
 }
-.quill > .ql-container > .ql-editor.ql-blank::before {
+
+.quill>.ql-container>.ql-editor.ql-blank::before {
   /* for placeholder */
   color: inherit;
 }
+
 .ql-snow.ql-toolbar button svg {
   opacity: 0.76;
   color: currentColor;
 }
+
 .ql-snow .ql-stroke {
   /* for the border of the editor */
   stroke: currentColor !important;
 }
+
 .ql-snow .ql-fill {
   /* for the bg color */
   fill: currentColor !important;
 }
+
 .ql-picker-item {
   /* for dropdown */
   color: #444 !important;
 }
+
 .task .pencil-icon {
   display: none;
 }
+
 .task:hover .pencil-icon {
   display: inline-block;
 }
+
 ::-webkit-scrollbar {
-  width: 12px;               /* width of the entire scrollbar */
+  width: 5px;
 }
+
 ::-webkit-scrollbar-track {
-  background: orange;        /* color of the tracking area */
+  background: rgb(63, 62, 63);
 }
+
 ::-webkit-scrollbar-thumb {
-  background-color: blue;    /* color of the scroll thumb */
-  border-radius: 20px;       /* roundness of the scroll thumb */
-  border: 3px solid orange;  /* creates padding around scroll thumb */
+  background-color: rgb(20, 20, 20);
+  border-radius: 20px;
+  border: 1px solid rgb(63, 62, 63);
 }
