@@ -196,13 +196,6 @@ export default function Board() {
             let t1 = updatedTask.todoTasks.filter((board) => board.category == "To do")
             let t2 = updatedTask.doingTasks.filter((board) => board.category == "Doing")
             let t3 = updatedTask.doneTasks.filter((board) => board.category == "Done")
-            if (data.board.category === "To do") {
-                t1 = [...t1, data.board]
-            } else if (data.board.category === 'Doing') {
-                t2 = [...t2, data.board]
-            } else {
-                t3 = [...t3, data.board]
-            }
             setTask({ todoTasks: t1, doingTasks: t2, doneTasks: t3 })
             setFormData({
                 _id: "",
