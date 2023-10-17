@@ -28,7 +28,7 @@ interface FormData {
     user: string;
 }
 export default function Board() {
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const state = useSelector((store: any) => store.authReducer);
     const config = {
         headers: { Authorization: `Bearer ${state.user.token}` },
