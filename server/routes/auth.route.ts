@@ -6,7 +6,7 @@ const userModel = require("../models/user.model");
 const jwt = require("jsonwebtoken");
 const axios = require("axios");
 const config = require("config");
-router.get("/", async (req, res) => {
+router.get("/", async (req: any, res: any) => {
   try {
     res.send("Welcome User");
   } catch (error) {
@@ -31,7 +31,7 @@ router.post("/google/login", async (req: any, res: any) => {
       { userId: existingUser._id, user: existingUser.email },
       process.env.secretKey,
       {
-        expiresIn: "1d",
+        expiresIn: "24h",
       }
     );
     return res.json({ user: existingUser, token });
@@ -47,7 +47,7 @@ router.post("/google/login", async (req: any, res: any) => {
     { userId: user._id, user: user.email },
     process.env.secretKey,
     {
-      expiresIn: "1d",
+      expiresIn: "24h",
     }
   );
   res.json({ user, token });
@@ -93,7 +93,7 @@ router.post("/login", async (req: any, res: any) => {
       { userId: user._id, user: user.email },
       process.env.secretKey,
       {
-        expiresIn: "1d",
+        expiresIn: "24h",
       }
     );
     res.json({ message: "Login successful", user, token, auth: true });

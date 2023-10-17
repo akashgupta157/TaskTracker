@@ -1,4 +1,4 @@
-const user = localStorage.getItem("user");
+const user = sessionStorage.getItem("user");
 const initialState = {
   isAuthenticated: user ? true : false,
   user: user ? JSON.parse(user) : [],

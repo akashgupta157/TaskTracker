@@ -9,6 +9,10 @@
 .MuiOutlinedInput-notchedOutline {
   border-color: white !important;
 }
+.MuiOutlinedInput-input:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 100px #000 inset !important;
+  -webkit-text-fill-color: #fff !important;
+}
 .quill > * {
   border-color: inherit !important;
   color: inherit !important;
@@ -53,5 +57,5 @@
   display: none;
 }
 .task:hover .pencil-icon {
-  display: inline-block; 
+  display: inline-block;
 }

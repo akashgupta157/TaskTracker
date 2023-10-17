@@ -2,7 +2,7 @@ import axios from "axios";
 import { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { url } from "../components/url";
-import { AiOutlinePlus, AiOutlineCalendar, AiOutlineCheckSquare } from "react-icons/ai";
+import { AiOutlinePlus, AiOutlineCalendar, AiOutlineCheckSquare, AiOutlineLoading } from "react-icons/ai";
 import { MdSubtitles, MdOutlineDeleteOutline } from "react-icons/md";
 import { BsJustifyLeft, BsArrowDownUp, BsArrowRight, BsCheckSquareFill } from "react-icons/bs";
 import { BiPencil } from "react-icons/bi";
@@ -28,14 +28,17 @@ interface FormData {
     user: string;
 }
 export default function Board() {
+    const [loading, setLoading] = useState(true);
     const state = useSelector((store: any) => store.authReducer);
     const config = {
         headers: { Authorization: `Bearer ${state.user.token}` },
     };
     const [list, setList] = useState<Array<any>>([]);
     const fetchData = async () => {
+        setLoading(true)
         const { data } = await axios.get(`${url}/board`, config);
         setList(data.boards);
+        setLoading(false)
     };
     const [task, setTask] = useState<{
         todoTasks: Array<any>;
@@ -296,7 +299,6 @@ export default function Board() {
         setFormData({ ...formData, checklist: updatedChecklist });
     };
     const onDragEnd = async (result: DropResult) => {
-        // console.log(result)
         const { draggableId, destination, source } = result
         if (!destination) return
         if (destination.droppableId === source.droppableId && destination.index === source.index) return
@@ -341,58 +343,64 @@ export default function Board() {
                 <div className="min-h-[90vh] bg-[#1e3a8a] p-5 flex flex-col gap-5 md:flex-row">
                     <div className="bg-black text-[#b6c2cf] px-5 py-3 rounded-lg flex flex-col md:w-[25%] h-max">
                         <h1 className="text-base font-semibold p-1">To do</h1>
-                        <Droppable droppableId="To do">
-                            {
-                                (provided) => (
-                                    <div className="min-h-[2vh] flex flex-col gap-2" ref={provided.innerRef} {...provided.droppableProps}>
-                                        {task.todoTasks.map((e, i) => (
-                                            <Draggable draggableId={e._id.toString()} index={i}>
-                                                {
-                                                    (provided) => (
-                                                        <div
-                                                            key={e._id}
-                                                            className="task hover:bg-[#363b3f] p-2 rounded bg-[#25282a] cursor-pointer"
-                                                            onClick={() => {
-                                                                setFormData(e);
-                                                                handleOpenEdit()
-                                                            }}
-                                                            {...provided.draggableProps}
-                                                            {...provided.dragHandleProps}
-                                                            ref={provided.innerRef}
-                                                        >
-                                                            <div className="flex gap-2 items-center">
-                                                                {e.priority && (
-                                                                    <p
-                                                                        className={`w-8 my-1 h-2 rounded-br-3xl ${e.priority == "High"
-                                                                            ? "bg-red-700"
-                                                                            : e.priority == "Mid"
-                                                                                ? "bg-yellow-600"
-                                                                                : e.priority == "Low"
-                                                                                    ? "bg-green-600"
-                                                                                    : null
-                                                                            }`}
-                                                                    ></p>
-                                                                )}
-                                                                {e.description && <BsJustifyLeft />}
-                                                                {e.dueDate && <AiOutlineCalendar />}
-                                                                {e.checklist.length > 0 && <BsCheckSquareFill className="text-sm" />}
-                                                                {e.attachment && <IoAttach />}
-                                                            </div>
-                                                            <h1 className="flex items-center justify-between mt-1">
-                                                                {e.title} <BiPencil className="pencil-icon" />
-                                                            </h1>
-                                                        </div>
-                                                    )
-                                                }
+                        {
+                            loading ?
+                                <div className="px-5 py-1.5 flex justify-center transform transition-transform duration-1000 ease-in-out hover:rotate-360">
+                                    <AiOutlineLoading className='text-2xl animate-spin' />
+                                </div> :
+                                <Droppable droppableId="To do">
+                                    {
+                                        (provided) => (
+                                            <div className="min-h-[2vh] flex flex-col gap-2" ref={provided.innerRef} {...provided.droppableProps}>
+                                                {task.todoTasks.map((e, i) => (
+                                                    <Draggable draggableId={e._id.toString()} index={i}>
+                                                        {
+                                                            (provided) => (
+                                                                <div
+                                                                    key={e._id}
+                                                                    className="task hover:bg-[#363b3f] p-2 rounded bg-[#25282a] cursor-pointer"
+                                                                    onClick={() => {
+                                                                        setFormData(e);
+                                                                        handleOpenEdit()
+                                                                    }}
+                                                                    {...provided.draggableProps}
+                                                                    {...provided.dragHandleProps}
+                                                                    ref={provided.innerRef}
+                                                                >
+                                                                    <div className="flex gap-2 items-center">
+                                                                        {e.priority && (
+                                                                            <p
+                                                                                className={`w-8 my-1 h-2 rounded-br-3xl ${e.priority == "High"
+                                                                                    ? "bg-red-700"
+                                                                                    : e.priority == "Mid"
+                                                                                        ? "bg-yellow-600"
+                                                                                        : e.priority == "Low"
+                                                                                            ? "bg-green-600"
+                                                                                            : null
+                                                                                    }`}
+                                                                            ></p>
+                                                                        )}
+                                                                        {e.description && <BsJustifyLeft />}
+                                                                        {e.dueDate && <AiOutlineCalendar />}
+                                                                        {e.checklist.length > 0 && <BsCheckSquareFill className="text-sm" />}
+                                                                        {e.attachment && <IoAttach />}
+                                                                    </div>
+                                                                    <h1 className="flex items-center justify-between mt-1">
+                                                                        {e.title} <BiPencil className="pencil-icon" />
+                                                                    </h1>
+                                                                </div>
+                                                            )
+                                                        }
 
-                                            </Draggable>
-                                        ))}
-                                        {provided.placeholder}
-                                    </div>
-                                )
-                            }
+                                                    </Draggable>
+                                                ))}
+                                                {provided.placeholder}
+                                            </div>
+                                        )
+                                    }
 
-                        </Droppable>
+                                </Droppable>
+                        }
                         <button
                             className="flex items-center text-base font-semibold gap-2 cursor-pointer hover:bg-[#3f3f46] p-1 rounded-lg mt-2"
                             onClick={() => {
@@ -416,58 +424,64 @@ export default function Board() {
                     </div>
                     <div className="bg-black text-[#b6c2cf] px-5 py-3 rounded-lg flex flex-col md:w-[25%] h-max">
                         <h1 className="text-base font-semibold p-1">Doing</h1>
-                        <Droppable droppableId="Doing">
-                            {
-                                (provided) => (
-                                    <div className="min-h-[2vh] flex flex-col gap-2" ref={provided.innerRef} {...provided.droppableProps}>
-                                        {task.doingTasks.map((e, i) => (
-                                            <Draggable draggableId={e._id.toString()} index={i}>
-                                                {
-                                                    (provided) => (
-                                                        <div
-                                                            key={e._id}
-                                                            className="task hover:bg-[#363b3f] p-2 rounded bg-[#25282a] cursor-pointer"
-                                                            onClick={() => {
-                                                                setFormData(e);
-                                                                handleOpenEdit()
-                                                            }}
-                                                            {...provided.draggableProps}
-                                                            {...provided.dragHandleProps}
-                                                            ref={provided.innerRef}
-                                                        >
-                                                            <div className="flex gap-2 items-center">
-                                                                {e.priority && (
-                                                                    <p
-                                                                        className={`w-8 my-1 h-2 rounded-br-3xl ${e.priority == "High"
-                                                                            ? "bg-red-700"
-                                                                            : e.priority == "Mid"
-                                                                                ? "bg-yellow-600"
-                                                                                : e.priority == "Low"
-                                                                                    ? "bg-green-600"
-                                                                                    : null
-                                                                            }`}
-                                                                    ></p>
-                                                                )}
-                                                                {e.description && <BsJustifyLeft />}
-                                                                {e.dueDate && <AiOutlineCalendar />}
-                                                                {e.checklist.length > 0 && <BsCheckSquareFill className="text-sm" />}
-                                                                {e.attachment && <IoAttach />}
-                                                            </div>
-                                                            <h1 className="flex items-center justify-between mt-1">
-                                                                {e.title} <BiPencil className="pencil-icon" />
-                                                            </h1>
-                                                        </div>
-                                                    )
-                                                }
+                        {
+                            loading ?
+                                <div className="px-5 py-1.5 flex justify-center transform transition-transform duration-1000 ease-in-out hover:rotate-360">
+                                    <AiOutlineLoading className='text-2xl animate-spin' />
+                                </div> :
+                                <Droppable droppableId="Doing">
+                                    {
+                                        (provided) => (
+                                            <div className="min-h-[2vh] flex flex-col gap-2" ref={provided.innerRef} {...provided.droppableProps}>
+                                                {task.doingTasks.map((e, i) => (
+                                                    <Draggable draggableId={e._id.toString()} index={i}>
+                                                        {
+                                                            (provided) => (
+                                                                <div
+                                                                    key={e._id}
+                                                                    className="task hover:bg-[#363b3f] p-2 rounded bg-[#25282a] cursor-pointer"
+                                                                    onClick={() => {
+                                                                        setFormData(e);
+                                                                        handleOpenEdit()
+                                                                    }}
+                                                                    {...provided.draggableProps}
+                                                                    {...provided.dragHandleProps}
+                                                                    ref={provided.innerRef}
+                                                                >
+                                                                    <div className="flex gap-2 items-center">
+                                                                        {e.priority && (
+                                                                            <p
+                                                                                className={`w-8 my-1 h-2 rounded-br-3xl ${e.priority == "High"
+                                                                                    ? "bg-red-700"
+                                                                                    : e.priority == "Mid"
+                                                                                        ? "bg-yellow-600"
+                                                                                        : e.priority == "Low"
+                                                                                            ? "bg-green-600"
+                                                                                            : null
+                                                                                    }`}
+                                                                            ></p>
+                                                                        )}
+                                                                        {e.description && <BsJustifyLeft />}
+                                                                        {e.dueDate && <AiOutlineCalendar />}
+                                                                        {e.checklist.length > 0 && <BsCheckSquareFill className="text-sm" />}
+                                                                        {e.attachment && <IoAttach />}
+                                                                    </div>
+                                                                    <h1 className="flex items-center justify-between mt-1">
+                                                                        {e.title} <BiPencil className="pencil-icon" />
+                                                                    </h1>
+                                                                </div>
+                                                            )
+                                                        }
 
-                                            </Draggable>
-                                        ))}
-                                        {provided.placeholder}
-                                    </div>
-                                )
-                            }
+                                                    </Draggable>
+                                                ))}
+                                                {provided.placeholder}
+                                            </div>
+                                        )
+                                    }
 
-                        </Droppable>
+                                </Droppable>
+                        }
                         <button
                             className="flex items-center text-base font-semibold gap-2 cursor-pointer hover:bg-[#3f3f46] p-1 rounded-lg mt-2"
                             onClick={() => {
@@ -491,55 +505,60 @@ export default function Board() {
                     </div>
                     <div className="bg-black text-[#b6c2cf] px-5 py-3 rounded-lg flex flex-col md:w-[25%] h-max">
                         <h1 className="text-base font-semibold p-1">Done</h1>
-                        <Droppable droppableId="Done">
-                            {(provided) => (
-                                <div className="min-h-[2vh] flex flex-col gap-2" ref={provided.innerRef} {...provided.droppableProps}>
-                                    {task.doneTasks.map((e, i) => (
-                                        <Draggable draggableId={e._id.toString()} index={i}>
-                                            {
-                                                (provided) => (
-                                                    <div
-                                                        key={e._id}
-                                                        className="task hover:bg-[#363b3f] p-2 rounded bg-[#25282a] cursor-pointer"
-                                                        onClick={() => {
-                                                            setFormData(e);
-                                                            handleOpenEdit()
-                                                        }}
-                                                        {...provided.draggableProps}
-                                                        {...provided.dragHandleProps}
-                                                        ref={provided.innerRef}
-                                                    >
-                                                        <div className="flex gap-2 items-center">
-                                                            {e.priority && (
-                                                                <p
-                                                                    className={`w-8 my-1 h-2 rounded-br-3xl ${e.priority == "High"
-                                                                        ? "bg-red-700"
-                                                                        : e.priority == "Mid"
-                                                                            ? "bg-yellow-600"
-                                                                            : e.priority == "Low"
-                                                                                ? "bg-green-600"
-                                                                                : null
-                                                                        }`}
-                                                                ></p>
-                                                            )}
-                                                            {e.description && <BsJustifyLeft />}
-                                                            {e.dueDate && <AiOutlineCalendar />}
-                                                            {e.checklist.length > 0 && <BsCheckSquareFill className="text-sm" />}
-                                                            {e.attachment && <IoAttach />}
-                                                        </div>
-                                                        <h1 className="flex items-center justify-between mt-1">
-                                                            {e.title} <BiPencil className="pencil-icon" />
-                                                        </h1>
-                                                    </div>
-                                                )
-                                            }
-                                        </Draggable>
-                                    ))}
-                                    {provided.placeholder}
-                                </div>
-                            )}
-                        </Droppable>
-
+                        {
+                            loading ?
+                                <div className="px-5 py-1.5 flex justify-center transform transition-transform duration-1000 ease-in-out hover:rotate-360">
+                                    <AiOutlineLoading className='text-2xl animate-spin' />
+                                </div> :
+                                <Droppable droppableId="Done">
+                                    {(provided) => (
+                                        <div className="min-h-[2vh] flex flex-col gap-2" ref={provided.innerRef} {...provided.droppableProps}>
+                                            {task.doneTasks.map((e, i) => (
+                                                <Draggable draggableId={e._id.toString()} index={i}>
+                                                    {
+                                                        (provided) => (
+                                                            <div
+                                                                key={e._id}
+                                                                className="task hover:bg-[#363b3f] p-2 rounded bg-[#25282a] cursor-pointer"
+                                                                onClick={() => {
+                                                                    setFormData(e);
+                                                                    handleOpenEdit()
+                                                                }}
+                                                                {...provided.draggableProps}
+                                                                {...provided.dragHandleProps}
+                                                                ref={provided.innerRef}
+                                                            >
+                                                                <div className="flex gap-2 items-center">
+                                                                    {e.priority && (
+                                                                        <p
+                                                                            className={`w-8 my-1 h-2 rounded-br-3xl ${e.priority == "High"
+                                                                                ? "bg-red-700"
+                                                                                : e.priority == "Mid"
+                                                                                    ? "bg-yellow-600"
+                                                                                    : e.priority == "Low"
+                                                                                        ? "bg-green-600"
+                                                                                        : null
+                                                                                }`}
+                                                                        ></p>
+                                                                    )}
+                                                                    {e.description && <BsJustifyLeft />}
+                                                                    {e.dueDate && <AiOutlineCalendar />}
+                                                                    {e.checklist.length > 0 && <BsCheckSquareFill className="text-sm" />}
+                                                                    {e.attachment && <IoAttach />}
+                                                                </div>
+                                                                <h1 className="flex items-center justify-between mt-1">
+                                                                    {e.title} <BiPencil className="pencil-icon" />
+                                                                </h1>
+                                                            </div>
+                                                        )
+                                                    }
+                                                </Draggable>
+                                            ))}
+                                            {provided.placeholder}
+                                        </div>
+                                    )}
+                                </Droppable>
+                        }
                         <button
                             className="flex items-center text-base font-semibold gap-2 cursor-pointer hover:bg-[#3f3f46] p-1 rounded-lg mt-2"
                             onClick={() => {

@@ -53,7 +53,7 @@ export default function Navbar() {
         const accessToken = tokenResponse.access_token;
         const { data } = await axios.post(`${url}/auth/google/login`, { googleAccessToken: accessToken })
         dispatch(login({ ...data.user, token: data.token }))
-        localStorage.setItem("user", JSON.stringify({ ...data.user, token: data.token }))
+        sessionStorage.setItem("user", JSON.stringify({ ...data.user, token: data.token }))
         handleCloseLogin()
         handleCloseSignup()
         dispatch(setPageLoad(false))
@@ -75,7 +75,7 @@ export default function Navbar() {
             });
             setLoading(false)
             dispatch(login({ ...data.user, token: data.token }))
-            localStorage.setItem("user", JSON.stringify({ ...data.user, token: data.token }))
+            sessionStorage.setItem("user", JSON.stringify({ ...data.user, token: data.token }))
             handleCloseLogin()
             setFormData({
                 name: "", email: "", password: "",
@@ -131,7 +131,7 @@ export default function Navbar() {
     }
     const handleLogout = () => {
         dispatch(logout())
-        localStorage.setItem("user", '')
+        sessionStorage.setItem("user", '')
         axios.get(`${url}/auth/logout`)
         nav('/')
     }
