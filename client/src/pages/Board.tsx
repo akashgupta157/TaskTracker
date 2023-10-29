@@ -335,7 +335,7 @@ export default function Board() {
                                     {
                                         (provided: { innerRef: any; droppableProps: any; placeholder: any; }) => (
                                             <div className="min-h-[2vh] flex flex-col gap-2" ref={provided.innerRef} {...provided.droppableProps}>
-                                                {task.todoTasks.map((e: { _id: { toString: () => any; }; priority: string; description: any; dueDate: any; checklist: string | any[]; attachment: any; title: any; }, i: any) => (
+                                                {task.todoTasks.map((e, i) => (
                                                     <Draggable draggableId={e._id.toString()} index={i}>
                                                         {
                                                             (provided: { draggableProps: any; dragHandleProps: any; innerRef: any; }) => (
@@ -416,7 +416,7 @@ export default function Board() {
                                     {
                                         (provided: { innerRef: any; droppableProps: any; placeholder: any; }) => (
                                             <div className="min-h-[2vh] flex flex-col gap-2" ref={provided.innerRef} {...provided.droppableProps}>
-                                                {task.doingTasks.map((e: { _id: { toString: () => any; }; priority: string; description: any; dueDate: any; checklist: string | any[]; attachment: any; title: any; }, i: any) => (
+                                                {task.doingTasks.map((e, i) => (
                                                     <Draggable draggableId={e._id.toString()} index={i}>
                                                         {
                                                             (provided: { draggableProps: any; dragHandleProps: any; innerRef: any; }) => (
@@ -496,7 +496,7 @@ export default function Board() {
                                 <Droppable droppableId="Done">
                                     {(provided: { innerRef: any; droppableProps: any; placeholder: any; }) => (
                                         <div className="min-h-[2vh] flex flex-col gap-2" ref={provided.innerRef} {...provided.droppableProps}>
-                                            {task.doneTasks.map((e: { _id: { toString: () => any; }; priority: string; description: any; dueDate: any; checklist: string | any[]; attachment: any; title: any; }, i: any) => (
+                                            {task.doneTasks.map((e, i) => (
                                                 <Draggable draggableId={e._id.toString()} index={i}>
                                                     {
                                                         (provided: { draggableProps: any; dragHandleProps: any; innerRef: any; }) => (
