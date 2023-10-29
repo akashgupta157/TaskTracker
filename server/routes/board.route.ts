@@ -89,9 +89,10 @@ router1.patch("/:boardId", async (req: CustomRequest, res: Response) => {
     existingBoard.checklist = checklist || existingBoard.checklist;
     existingBoard.attachment = attachment || existingBoard.attachment;
     await existingBoard.save();
+    const boards = await boardModel.find({ user: userId });
     res
       .status(200)
-      .json({ message: "Board updated successfully", board: existingBoard });
+      .json({ message: "Board updated successfully", boards});
   } catch (error) {
     console.error(error);
     res

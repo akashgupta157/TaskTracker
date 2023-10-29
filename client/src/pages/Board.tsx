@@ -181,22 +181,12 @@ export default function Board() {
         e.preventDefault();
         if (formData.title) {
             const { data } = await axios.patch(`${url}/board/${formData._id}`, formData, config);
-            const updatedTask = {
-                todoTasks: task.todoTasks.map((item: { _id: any; }) =>
-                    item._id === formData._id ? formData : item
-                ),
-                doingTasks: task.doingTasks.map((item: { _id: any; }) =>
-                    item._id === formData._id ? formData : item
-                ),
-                doneTasks: task.doneTasks.map((item: { _id: any; }) =>
-                    item._id === formData._id ? formData : item
-                ),
-            };
-            console.log(data.board)
-            let t1 = updatedTask.todoTasks.filter((board: { category: string; }) => board.category == "To do")
-            let t2 = updatedTask.doingTasks.filter((board: { category: string; }) => board.category == "Doing")
-            let t3 = updatedTask.doneTasks.filter((board: { category: string; }) => board.category == "Done")
-            setTask({ todoTasks: t1, doingTasks: t2, doneTasks: t3 })
+            setTask({
+                ...task,
+                todoTasks: data.boards.filter((board: { category: string; }) => board.category == "To do"),
+                doingTasks: data.boards.filter((board: { category: string; }) => board.category == "Doing"),
+                doneTasks: data.boards.filter((board: { category: string; }) => board.category == "Done"),
+            });
             setFormData({
                 _id: "",
                 title: "",
