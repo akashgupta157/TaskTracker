@@ -52,9 +52,9 @@ export default function Board() {
     useEffect(() => {
         setTask({
             ...task,
-            todoTasks: list.filter((board) => board.category == "To do"),
-            doingTasks: list.filter((board) => board.category == "Doing"),
-            doneTasks: list.filter((board) => board.category == "Done"),
+            todoTasks: list.filter((board: { category: string; }) => board.category == "To do"),
+            doingTasks: list.filter((board: { category: string; }) => board.category == "Doing"),
+            doneTasks: list.filter((board: { category: string; }) => board.category == "Done"),
         });
     }, [list]);
     useEffect(() => {
@@ -182,20 +182,20 @@ export default function Board() {
         if (formData.title) {
             const { data } = await axios.patch(`${url}/board/${formData._id}`, formData, config);
             const updatedTask = {
-                todoTasks: task.todoTasks.map((item) =>
+                todoTasks: task.todoTasks.map((item: { _id: any; }) =>
                     item._id === formData._id ? formData : item
                 ),
-                doingTasks: task.doingTasks.map((item) =>
+                doingTasks: task.doingTasks.map((item: { _id: any; }) =>
                     item._id === formData._id ? formData : item
                 ),
-                doneTasks: task.doneTasks.map((item) =>
+                doneTasks: task.doneTasks.map((item: { _id: any; }) =>
                     item._id === formData._id ? formData : item
                 ),
             };
             console.log(data.board)
-            let t1 = updatedTask.todoTasks.filter((board) => board.category == "To do")
-            let t2 = updatedTask.doingTasks.filter((board) => board.category == "Doing")
-            let t3 = updatedTask.doneTasks.filter((board) => board.category == "Done")
+            let t1 = updatedTask.todoTasks.filter((board: { category: string; }) => board.category == "To do")
+            let t2 = updatedTask.doingTasks.filter((board: { category: string; }) => board.category == "Doing")
+            let t3 = updatedTask.doneTasks.filter((board: { category: string; }) => board.category == "Done")
             setTask({ todoTasks: t1, doingTasks: t2, doneTasks: t3 })
             setFormData({
                 _id: "",
@@ -226,9 +226,9 @@ export default function Board() {
         e.preventDefault();
         await axios.delete(`${url}/board/${formData._id}`, config);
         const updatedTask = {
-            todoTasks: task.todoTasks.filter((board) => board._id !== formData._id),
-            doingTasks: task.doingTasks.filter((board) => board._id !== formData._id),
-            doneTasks: task.doneTasks.filter((board) => board._id !== formData._id),
+            todoTasks: task.todoTasks.filter((board: { _id: any; }) => board._id !== formData._id),
+            doingTasks: task.doingTasks.filter((board: { _id: any; }) => board._id !== formData._id),
+            doneTasks: task.doneTasks.filter((board: { _id: any; }) => board._id !== formData._id),
         };
         setTask(updatedTask);
         setFormData({
@@ -301,21 +301,21 @@ export default function Board() {
             add = todo[source.index]
             add = { ...add, category: destination.droppableId }
             todo.splice(source.index, 1)
-            t = todo.filter((board) => board.category == "To do")
+            t = todo.filter((board: { category: string; }) => board.category == "To do")
             setTask({ ...task, todoTasks: t })
             axios.patch(`${url}/board/${draggableId}`, add, config);
         } else if (source.droppableId === 'Doing') {
             add = doing[source.index]
             add = { ...add, category: destination.droppableId }
             doing.splice(source.index, 1)
-            t = doing.filter((board) => board.category == "Doing")
+            t = doing.filter((board: { category: string; }) => board.category == "Doing")
             setTask({ ...task, doingTasks: t })
             axios.patch(`${url}/board/${draggableId}`, add, config);
         } else {
             add = done[source.index]
             add = { ...add, category: destination.droppableId }
             done.splice(source.index, 1)
-            t = done.filter((board) => board.category == "Done")
+            t = done.filter((board: { category: string; }) => board.category == "Done")
             setTask({ ...task, doneTasks: t })
             axios.patch(`${url}/board/${draggableId}`, add, config);
         }
@@ -343,12 +343,12 @@ export default function Board() {
                                 </div> :
                                 <Droppable droppableId="To do">
                                     {
-                                        (provided) => (
+                                        (provided: { innerRef: any; droppableProps: any; placeholder: any; }) => (
                                             <div className="min-h-[2vh] flex flex-col gap-2" ref={provided.innerRef} {...provided.droppableProps}>
-                                                {task.todoTasks.map((e, i) => (
+                                                {task.todoTasks.map((e: { _id: { toString: () => any; }; priority: string; description: any; dueDate: any; checklist: string | any[]; attachment: any; title: any; }, i: any) => (
                                                     <Draggable draggableId={e._id.toString()} index={i}>
                                                         {
-                                                            (provided) => (
+                                                            (provided: { draggableProps: any; dragHandleProps: any; innerRef: any; }) => (
                                                                 <div
                                                                     key={e._id}
                                                                     className="task hover:bg-[#363b3f] p-2 rounded bg-[#25282a] cursor-pointer"
@@ -424,12 +424,12 @@ export default function Board() {
                                 </div> :
                                 <Droppable droppableId="Doing">
                                     {
-                                        (provided) => (
+                                        (provided: { innerRef: any; droppableProps: any; placeholder: any; }) => (
                                             <div className="min-h-[2vh] flex flex-col gap-2" ref={provided.innerRef} {...provided.droppableProps}>
-                                                {task.doingTasks.map((e, i) => (
+                                                {task.doingTasks.map((e: { _id: { toString: () => any; }; priority: string; description: any; dueDate: any; checklist: string | any[]; attachment: any; title: any; }, i: any) => (
                                                     <Draggable draggableId={e._id.toString()} index={i}>
                                                         {
-                                                            (provided) => (
+                                                            (provided: { draggableProps: any; dragHandleProps: any; innerRef: any; }) => (
                                                                 <div
                                                                     key={e._id}
                                                                     className="task hover:bg-[#363b3f] p-2 rounded bg-[#25282a] cursor-pointer"
@@ -504,12 +504,12 @@ export default function Board() {
                                     <AiOutlineLoading className='text-2xl animate-spin' />
                                 </div> :
                                 <Droppable droppableId="Done">
-                                    {(provided) => (
+                                    {(provided: { innerRef: any; droppableProps: any; placeholder: any; }) => (
                                         <div className="min-h-[2vh] flex flex-col gap-2" ref={provided.innerRef} {...provided.droppableProps}>
-                                            {task.doneTasks.map((e, i) => (
+                                            {task.doneTasks.map((e: { _id: { toString: () => any; }; priority: string; description: any; dueDate: any; checklist: string | any[]; attachment: any; title: any; }, i: any) => (
                                                 <Draggable draggableId={e._id.toString()} index={i}>
                                                     {
-                                                        (provided) => (
+                                                        (provided: { draggableProps: any; dragHandleProps: any; innerRef: any; }) => (
                                                             <div
                                                                 key={e._id}
                                                                 className="task hover:bg-[#363b3f] p-2 rounded bg-[#25282a] cursor-pointer"
@@ -589,7 +589,7 @@ export default function Board() {
                                     <TextField
                                         inputRef={inputRef}
                                         value={formData.title}
-                                        onChange={(e) =>
+                                        onChange={(e: { target: { value: any; }; }) =>
                                             setFormData({ ...formData, title: e.target.value })
                                         }
                                         onBlur={() => setInputVisible(false)}
@@ -622,7 +622,7 @@ export default function Board() {
                                 modules={modules}
                                 formats={formats}
                                 value={formData.description}
-                                onChange={(e) => setFormData({ ...formData, description: e })}
+                                onChange={(e: any) => setFormData({ ...formData, description: e })}
                             />
                             {
                                 formData.priority && <div className="flex items-center gap-2 mt-5 mb-3">
@@ -648,7 +648,7 @@ export default function Board() {
                             }
                             {isChecklistOpen && (
                                 <div>
-                                    {formData.checklist.map((item, index) => (
+                                    {formData.checklist.map((item: { checked: any; details: any; }, index: number) => (
                                         <div key={index} className="flex items-center gap-2">
                                             <Checkbox checked={item.checked}
                                                 onChange={() => toggleChecklistItem(index)}
@@ -664,7 +664,7 @@ export default function Board() {
                                                 autoComplete="off"
                                                 placeholder="Add a checklist item"
                                                 sx={{ input: { color: "white" } }}
-                                                onChange={(e) => updateChecklistItem(index, e.target.value)} />
+                                                onChange={(e: { target: { value: string; }; }) => updateChecklistItem(index, e.target.value)} />
                                         </div>
                                     ))}
                                     <button onClick={addChecklistItem} className="mb-3 bg-[#b8bbbe] rounded text-gray-900 font-semibold px-2.5 py-1">Add Checklist Item</button>
@@ -710,7 +710,7 @@ export default function Board() {
                                     <TextField
                                         inputRef={inputRef}
                                         value={formData.title}
-                                        onChange={(e) =>
+                                        onChange={(e: { target: { value: any; }; }) =>
                                             setFormData({ ...formData, title: e.target.value })
                                         }
                                         onBlur={() => setInputVisible(false)}
@@ -743,7 +743,7 @@ export default function Board() {
                                 modules={modules}
                                 formats={formats}
                                 value={formData.description}
-                                onChange={(e) => setFormData({ ...formData, description: e })}
+                                onChange={(e: any) => setFormData({ ...formData, description: e })}
                             />
                             {
                                 formData.priority && <div className="flex items-center gap-2 mt-5 mb-3">
@@ -769,7 +769,7 @@ export default function Board() {
                             }
                             <div className="flex flex-col gap-2 mt-5 mb-3">
                                 {formData.checklist.length != 0 && <h1 className="text-base font-bold flex gap-3 items-center"><AiOutlineCheckSquare />Checklist :-</h1>}
-                                {formData.checklist?.map((e, index) => (
+                                {formData.checklist?.map((e: { checked: any; details: any; }, index: number) => (
                                     <div className="flex items-center gap-2">
                                         <Checkbox checked={e.checked}
                                             onChange={() => toggleChecklistItem(index)}
@@ -785,7 +785,7 @@ export default function Board() {
                                             autoComplete="off"
                                             placeholder="Add a checklist item"
                                             sx={{ input: { color: "white" } }}
-                                            onChange={(e) => updateChecklistItem(index, e.target.value)}
+                                            onChange={(e: { target: { value: string; }; }) => updateChecklistItem(index, e.target.value)}
                                         />
                                     </div>
                                 ))}

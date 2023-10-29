@@ -1,7 +1,7 @@
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify';
-import { useEffect } from "react";
+import { useEffect } from 'react';
 import { url } from '../components/url';
 import axios from "axios";
 export default function Home() {
