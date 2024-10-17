@@ -1,6 +1,17 @@
+// {
+//     "compilerOptions": {
+//         "esModuleInterop": true,
+//         "outDir": "./dist"
+//     }
+// }
 {
     "compilerOptions": {
-        "esModuleInterop": true,
-        "outDir": "./dist"
+      "target": "ES6", // Or 'ES2015'
+      "module": "commonjs",
+      "lib": ["ES6", "DOM"], // Ensure ES6 or later is included for Promise support
+      "outDir": "./dist",
+      "esModuleInterop": true,
+      "strict": true
     }
-}
+  }
+  

@@ -9,7 +9,7 @@ const config = require("config");
 router.get("/", async (req: any, res: any) => {
   try {
     res.send("Welcome User");
-  } catch (error) {
+  } catch (error: any) {
     res.status(404).send(error.message);
   }
 });
@@ -74,7 +74,7 @@ router.post("/register", async (req: any, res: any) => {
         });
       }
     });
-  } catch (error) {
+  } catch (error: any) {
     res.json({ error: error.message });
   }
 });
@@ -97,7 +97,7 @@ router.post("/login", async (req: any, res: any) => {
       }
     );
     res.json({ message: "Login successful", user, token, auth: true });
-  } catch (error) {
+  } catch (error: any) {
     res.json({ message: error.message });
   }
 });
