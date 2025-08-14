@@ -1,0 +1,87 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id          String        @id @default(cuid())
+  email       String        @unique
+  name        String?
+  image       String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  Board       Board[]
+  BoardMember BoardMember[]
+  Card        Card[]
+}
+
+model Board {
+  id          String        @id @default(cuid())
+  title       String
+  description String?
+  background  String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  admin       String
+  user        User          @relation(fields: [admin], references: [id])
+  lists       List[]
+  members     BoardMember[]
+}
+
+model BoardMember {
+  id        String   @id @default(cuid())
+  boardId   String
+  board     Board    @relation(fields: [boardId], references: [id])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  role      String   @default("MEMBER")
+  createdAt DateTime @default(now())
+  Card      Card?    @relation(fields: [cardId], references: [id])
+  cardId    String?
+}
+
+model List {
+  id        String   @id @default(cuid())
+  title     String
+  position  Int
+  boardId   String
+  board     Board    @relation(fields: [boardId], references: [id])
+  cards     Card[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Card {
+  id             String        @id @default(cuid())
+  title          String
+  description    String?
+  position       Int
+  priority       String?
+  isCompleted    Boolean       @default(false)
+  assignedTo     String?
+  assignedToUser User?         @relation(fields: [assignedTo], references: [id])
+  listId         String
+  list           List          @relation(fields: [listId], references: [id])
+  dueDate        DateTime?
+  checklist      Json? // [{ title: "Do this", isChecked: false }]
+  attachments    Attachment[]
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  BoardMember    BoardMember[]
+}
+
+model Attachment {
+  id        String   @id @default(cuid())
+  url       String
+  type      String // 'image', 'file', 'link'
+  name      String
+  cardId    String
+  card      Card     @relation(fields: [cardId], references: [id])
+  createdAt DateTime @default(now())
+}

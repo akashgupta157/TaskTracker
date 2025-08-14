@@ -1,42 +1,36 @@
-# TaskTracker
-## Overview
-TaskTracker is a feature-rich task management web application meticulously crafted to aid both individuals and teams in enhancing their organizational and productivity skills. Boasting an intuitive user interface and a comprehensive set of tools, TaskTracker simplifies the process of task creation, management, and tracking, enabling users to optimize their workflow effectively.
-## Feature
-- Secure user authentication and authorization
-- User-Friendly Interface
-- Responsive Design
-- Task Creation
-- Task Drag and Drop
-- Task Categories
-## Technologies Used
-- `Typescript`
-- `React`
-- `Redux`
-- `Node JS`
-- `Express JS`
-- `Mongo DB`
-- `Material UI`
-- `Tailwind CSS`
-## Deployment
-The project is deployed and accessible at https://tasktrackerpro.vercel.app.
-## Screenshots
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-- Landing Page
-  
-![Screenshot (1)](https://github.com/akashgupta157/TaskTracker/assets/112753311/3d8546fc-c694-42f2-85d4-16eb00815cc5)
+## Getting Started
 
-- Login
-  
-![Screenshot (2)](https://github.com/akashgupta157/TaskTracker/assets/112753311/bfc62448-2bc8-4264-926e-105aa92efc91)
+First, run the development server:
 
-- Sign up
-  
-![Screenshot (3)](https://github.com/akashgupta157/TaskTracker/assets/112753311/58a173b8-1ecb-42ce-bca6-c622e922035b)
+```bash
+npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
+```
 
-- Add Task
-  
-![Screenshot (4)](https://github.com/akashgupta157/TaskTracker/assets/112753311/2b0e4555-8554-4909-ad03-53e122904b02)
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-- Board
-  
-![Screenshot (5)](https://github.com/akashgupta157/TaskTracker/assets/112753311/36ac7303-f5b2-4087-8ded-11ddfe3971e9)
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+
+## Learn More
+
+To learn more about Next.js, take a look at the following resources:
+
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+
+## Deploy on Vercel
+
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
