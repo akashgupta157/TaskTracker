@@ -1,8 +1,0 @@
-{
-  "build": {
-    "env": {
-      "PRISMA_GENERATE_IN_POSTBUILD": "true",
-      "PRISMA_SKIP_POSTINSTALL_GENERATE": "true"
-    }
-  }
-}
