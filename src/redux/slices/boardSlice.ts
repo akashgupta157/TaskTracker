@@ -1,11 +1,11 @@
 import { BoardState, Card, List } from "@/types";
-import {
-  createNewList,
-  changeListPosition,
-  changeListTitle,
-} from "@/lib/api/list";
 import { createBoard, fetchBoards, fetchBoardDetails } from "@/lib/api/board";
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
+import {
+  createNewList,
+  changeListTitle,
+  changeListPosition,
+} from "@/lib/api/list";
 import {
   updateCard,
   createNewCard,
@@ -328,7 +328,11 @@ const boardSlice = createSlice({
       .addCase(addNewCard.rejected, (state) => {
         state.cardLoading = false;
       })
+      .addCase(reviseCard.pending, (state) => {
+        state.cardLoading = true;
+      })
       .addCase(reviseCard.fulfilled, (state, action: PayloadAction<Card>) => {
+        state.cardLoading = false;
         if (!state.currentBoard) return;
 
         const {
@@ -372,6 +376,9 @@ const boardSlice = createSlice({
         }
 
         normalizePositions(targetList.cards);
+      })
+      .addCase(reviseCard.rejected, (state) => {
+        state.cardLoading = false;
       });
   },
 });
