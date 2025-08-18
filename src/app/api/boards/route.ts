@@ -23,6 +23,11 @@ export async function GET() {
             },
           },
         },
+        members: {
+          include: {
+            user: true,
+          },
+        },
       },
     });
 

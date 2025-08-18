@@ -2,7 +2,7 @@ import prisma from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
-  req: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ boardId: string }> }
 ) {
   try {
@@ -18,6 +18,11 @@ export async function GET(
             cards: {
               orderBy: { position: "asc" },
             },
+          },
+        },
+        members: {
+          include: {
+            user: true,
           },
         },
       },

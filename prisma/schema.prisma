@@ -5,9 +5,9 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")
+  directUrl         = env("DIRECT_URL")
   shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
@@ -21,6 +21,7 @@ model User {
   Board       Board[]
   BoardMember BoardMember[]
   Card        Card[]
+  Invitation  Invitation[]
 }
 
 model Board {
@@ -34,6 +35,7 @@ model Board {
   user        User          @relation(fields: [admin], references: [id])
   lists       List[]
   members     BoardMember[]
+  Invitation  Invitation[]
 }
 
 model BoardMember {
@@ -86,4 +88,26 @@ model Attachment {
   cardId    String
   card      Card     @relation(fields: [cardId], references: [id])
   createdAt DateTime @default(now())
+}
+
+model Invitation {
+  id        String           @id @default(cuid())
+  email     String
+  boardId   String
+  board     Board            @relation(fields: [boardId], references: [id])
+  token     String           @unique
+  createdAt DateTime         @default(now())
+  expiresAt DateTime         @default(dbgenerated("(now() + interval '24 hours')"))
+  status    InvitationStatus @default(PENDING)
+  inviterId String
+  inviter   User             @relation(fields: [inviterId], references: [id])
+
+  @@unique([email, boardId])
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  EXPIRED
 }

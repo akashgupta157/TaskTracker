@@ -71,6 +71,7 @@ export type BoardMember = {
   id: string;
   boardId: string;
   userId: string;
+  user: User;
   role: string;
   cardId?: string;
   createdAt: string;
