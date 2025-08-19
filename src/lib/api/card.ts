@@ -1,12 +1,13 @@
 import axios from "axios";
 import { Card } from "@/types";
+import { handleApiError, throwSpecificError } from "../utils";
 
 export const createNewCard = async (cardData: Card) => {
   try {
     const { data } = await axios.post("/api/cards", cardData);
     return data;
   } catch (error) {
-    return error;
+    throwSpecificError(handleApiError(error));
   }
 };
 export const updateCard = async (cardData: Card) => {
@@ -14,7 +15,7 @@ export const updateCard = async (cardData: Card) => {
     const { data } = await axios.patch("/api/cards", cardData);
     return data;
   } catch (error) {
-    return error;
+    throwSpecificError(handleApiError(error));
   }
 };
 
@@ -25,7 +26,7 @@ export const toggleCardComplete = async (cardId: string) => {
     });
     return data;
   } catch (error) {
-    return error;
+    throwSpecificError(handleApiError(error));
   }
 };
 
@@ -41,6 +42,6 @@ export const changeCardPosition = async (cardData: {
     });
     return data;
   } catch (error) {
-    return error;
+    throwSpecificError(handleApiError(error));
   }
 };

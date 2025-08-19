@@ -1,4 +1,5 @@
 import axios from "axios";
+import { handleApiError, throwSpecificError } from "../utils";
 
 export const createNewList = async (listData: {
   title: string;
@@ -9,7 +10,7 @@ export const createNewList = async (listData: {
     const { data } = await axios.post("/api/lists", listData);
     return data;
   } catch (error) {
-    return error;
+    throwSpecificError(handleApiError(error));
   }
 };
 
@@ -25,7 +26,7 @@ export const changeListPosition = async (listData: {
     });
     return data;
   } catch (error) {
-    return error;
+    throwSpecificError(handleApiError(error));
   }
 };
 
@@ -39,6 +40,6 @@ export const changeListTitle = async (listData: {
     });
     return data;
   } catch (error) {
-    return error;
+    throwSpecificError(handleApiError(error));
   }
 };

@@ -1,15 +1,32 @@
 import prisma from "@/lib/prisma";
+import { handleApiError } from "@/lib/utils";
+import { authOptions } from "@/utils/authOption";
+import { getServerSession, Session } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ boardId: string }> }
 ) {
+  const session = (await getServerSession(authOptions)) as Session;
+
   try {
     const { boardId } = await params;
 
     const board = await prisma.board.findUnique({
-      where: { id: boardId },
+      where: {
+        id: boardId,
+        OR: [
+          { admin: session.user.id },
+          {
+            members: {
+              some: {
+                userId: session.user.id,
+              },
+            },
+          },
+        ],
+      },
       include: {
         user: true,
         lists: {
@@ -29,13 +46,15 @@ export async function GET(
     });
 
     if (!board) {
-      return NextResponse.json({ message: "Board not found" }, { status: 404 });
+      return NextResponse.json(
+        { message: "Unauthorized or board not found" },
+        { status: 404 }
+      );
     }
+
     return NextResponse.json(board);
   } catch (error) {
-    return NextResponse.json(
-      { message: (error as Error).message },
-      { status: 500 }
-    );
+    const { message, statusCode } = handleApiError(error);
+    return NextResponse.json({ message }, { status: statusCode || 500 });
   }
 }

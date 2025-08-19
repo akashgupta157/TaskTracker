@@ -1,16 +1,23 @@
-import { UniqueIdentifier } from "@dnd-kit/core";
-
 type User = {
   id: string;
   name: string;
   email: string;
   image: string;
 };
+
+export interface AppError {
+  message: string;
+  statusCode?: number;
+  code?: string;
+  timestamp?: string;
+}
+
 export type BoardState = {
   boards: Board[];
   currentBoard: (Board & { lists: (List & { cards: Card[] })[] }) | null;
   loading: boolean;
   cardLoading: boolean;
+  error: AppError | null;
 };
 
 export type Board = {

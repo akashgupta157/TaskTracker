@@ -1,4 +1,5 @@
 import prisma from "@/lib/prisma";
+import { handleApiError } from "@/lib/utils";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function PATCH(
@@ -76,9 +77,7 @@ export async function PATCH(
       { status: 200 }
     );
   } catch (error) {
-    return NextResponse.json(
-      { message: (error as Error).message },
-      { status: 500 }
-    );
+    const { message, statusCode } = handleApiError(error);
+    return NextResponse.json({ message }, { status: statusCode || 500 });
   }
 }

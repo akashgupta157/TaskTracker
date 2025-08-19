@@ -12,12 +12,14 @@ import {
   changeCardPosition,
   toggleCardComplete,
 } from "@/lib/api/card";
+import { handleApiError } from "@/lib/utils";
 
 const initialState: BoardState = {
   boards: [],
   currentBoard: null,
   loading: false,
   cardLoading: false,
+  error: null,
 };
 
 const normalizePositions = (cards: Card[]): void => {
@@ -245,11 +247,15 @@ const boardSlice = createSlice({
         list.title = title;
       }
     },
+    clearError: (state) => {
+      state.error = null;
+    },
   },
   extraReducers: (builder) => {
     builder
       .addCase(getBoards.pending, (state) => {
         state.loading = true;
+        state.error = null;
       })
       .addCase(
         getBoards.fulfilled,
@@ -258,8 +264,9 @@ const boardSlice = createSlice({
           state.boards = action.payload;
         }
       )
-      .addCase(getBoards.rejected, (state) => {
+      .addCase(getBoards.rejected, (state, action) => {
         state.loading = false;
+        state.error = handleApiError(action.error);
       })
       .addCase(
         addNewBoard.fulfilled,
@@ -271,8 +278,9 @@ const boardSlice = createSlice({
           state.currentBoard = action.payload;
         }
       )
-      .addCase(addNewBoard.rejected, (state) => {
+      .addCase(addNewBoard.rejected, (state, action) => {
         state.loading = false;
+        state.error = handleApiError(action.error);
       })
       .addCase(getBoardDetails.pending, (state) => {
         state.loading = true;
@@ -294,8 +302,10 @@ const boardSlice = createSlice({
           state.currentBoard = action.payload;
         }
       )
-      .addCase(getBoardDetails.rejected, (state) => {
+      .addCase(getBoardDetails.rejected, (state, action) => {
         state.loading = false;
+        console.log("Error fetching board details:", action.error);
+        state.error = handleApiError(action.error);
       })
       .addCase(addNewList.fulfilled, (state, action: PayloadAction<List>) => {
         if (
@@ -325,8 +335,9 @@ const boardSlice = createSlice({
           }
         }
       })
-      .addCase(addNewCard.rejected, (state) => {
+      .addCase(addNewCard.rejected, (state, action) => {
         state.cardLoading = false;
+        state.error = handleApiError(action.error);
       })
       .addCase(reviseCard.pending, (state) => {
         state.cardLoading = true;
@@ -377,8 +388,9 @@ const boardSlice = createSlice({
 
         normalizePositions(targetList.cards);
       })
-      .addCase(reviseCard.rejected, (state) => {
+      .addCase(reviseCard.rejected, (state, action) => {
         state.cardLoading = false;
+        state.error = handleApiError(action.error);
       });
   },
 });
@@ -390,4 +402,5 @@ export const {
   moveList,
   moveCard,
   modifyListTitle,
+  clearError,
 } = boardSlice.actions;

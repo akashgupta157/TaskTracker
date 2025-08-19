@@ -6,7 +6,6 @@ import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/redux/store";
 import ListContainer from "@/components/ListContainer";
 import { getBoardDetails } from "@/redux/slices/boardSlice";
-
 export default function Board() {
   const dispatch = useDispatch<AppDispatch>();
   const { currentBoard, loading } = useSelector(
@@ -21,6 +20,7 @@ export default function Board() {
       dispatch(getBoardDetails(id));
     }
   }, [id, currentBoard, dispatch]);
+
   return (
     <div
       className={`flex-1 flex flex-col font-sans ${currentBoard?.background}`}

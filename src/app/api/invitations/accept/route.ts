@@ -1,4 +1,5 @@
 import prisma from "@/lib/prisma";
+import { handleApiError } from "@/lib/utils";
 import { authOptions } from "@/utils/authOption";
 import { getServerSession, Session } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
@@ -70,9 +71,7 @@ export async function POST(request: NextRequest) {
     ]);
     return NextResponse.json({ boardId: invitation.boardId });
   } catch (error) {
-    return NextResponse.json(
-      { message: (error as Error).message },
-      { status: 500 }
-    );
+    const { message, statusCode } = handleApiError(error);
+    return NextResponse.json({ message }, { status: statusCode || 500 });
   }
 }

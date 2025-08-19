@@ -1,4 +1,5 @@
 import prisma from "@/lib/prisma";
+import { handleApiError } from "@/lib/utils";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
@@ -10,10 +11,8 @@ export async function POST(request: NextRequest) {
     });
     return NextResponse.json(card);
   } catch (error) {
-    return NextResponse.json(
-      { message: (error as Error).message },
-      { status: 500 }
-    );
+    const { message, statusCode } = handleApiError(error);
+    return NextResponse.json({ message }, { status: statusCode || 500 });
   }
 }
 export async function PATCH(request: NextRequest) {
@@ -26,9 +25,7 @@ export async function PATCH(request: NextRequest) {
     });
     return NextResponse.json(card);
   } catch (error) {
-    return NextResponse.json(
-      { message: (error as Error).message },
-      { status: 500 }
-    );
+    const { message, statusCode } = handleApiError(error);
+    return NextResponse.json({ message }, { status: statusCode || 500 });
   }
 }

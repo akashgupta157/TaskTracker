@@ -2,6 +2,7 @@ import prisma from "@/lib/prisma";
 import { Card } from "@/generated/prisma";
 import { PrismaClient } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
+import { handleApiError } from "@/lib/utils";
 
 export async function PATCH(
   request: NextRequest,
@@ -95,10 +96,8 @@ export async function PATCH(
 
     return NextResponse.json(result);
   } catch (error) {
-    return NextResponse.json(
-      { message: (error as Error).message },
-      { status: 500 }
-    );
+    const { message, statusCode } = handleApiError(error);
+    return NextResponse.json({ message }, { status: statusCode || 500 });
   }
 }
 
