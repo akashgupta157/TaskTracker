@@ -46,7 +46,7 @@ export default function Card({ card, list }: { card: CardType; list: List }) {
           className={`space-y-2 bg-card/60 p-3 border-2 rounded-xl font-sans cursor-pointer border-muted hover:border-white`}
         >
           {(card.description && card.description !== "<p></p>") ||
-          card.checklist ||
+          (card.checklist && card.checklist.length > 0) ||
           card.attachments ||
           card.priority ? (
             <div className="flex items-center gap-2">
@@ -64,40 +64,40 @@ export default function Card({ card, list }: { card: CardType; list: List }) {
                 </span>
               )}
 
-              <Tooltip>
-                <TooltipTrigger className="cursor-pointer">
-                  {card.description && card.description !== "<p></p>" && (
+              {card.description && card.description !== "<p></p>" && (
+                <Tooltip>
+                  <TooltipTrigger className="cursor-pointer">
                     <LuText />
-                  )}
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>This card has a description</p>
-                </TooltipContent>
-              </Tooltip>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>This card has a description</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
 
-              <Tooltip>
-                <TooltipTrigger className="cursor-pointer">
-                  {card.checklist && <LuSquareCheck />}
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>This card has a checklist</p>
-                </TooltipContent>
-              </Tooltip>
+              {card.checklist && card.checklist.length > 0 && (
+                <Tooltip>
+                  <TooltipTrigger className="cursor-pointer">
+                    <LuSquareCheck />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>This card has a checklist</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
 
-              <Tooltip>
-                <TooltipTrigger className="cursor-pointer">
-                  {Array.isArray(card.attachments) &&
-                    card.attachments.length > 0 && (
-                      <>
-                        <LuPaperclip />
-                        <p>{card.attachments.length}</p>
-                      </>
-                    )}
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>This card has attachments</p>
-                </TooltipContent>
-              </Tooltip>
+              {Array.isArray(card.attachments) &&
+                card.attachments.length > 0 && (
+                  <Tooltip>
+                    <TooltipTrigger className="cursor-pointer">
+                      <LuPaperclip />
+                      <p>{card.attachments.length}</p>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>This card has attachments</p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
             </div>
           ) : null}
 

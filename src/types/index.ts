@@ -54,6 +54,7 @@ export type Card = {
 };
 
 export type ChecklistItem = {
+  id: string;
   title: string;
   isChecked: boolean;
 };

@@ -4,24 +4,25 @@ import { Card, List } from "@/types";
 import { Button } from "./ui/button";
 import { formatDate } from "date-fns";
 import React, { useState } from "react";
+import { Checkbox } from "./ui/checkbox";
 import { useSelector } from "react-redux";
 import { useDispatch } from "react-redux";
 import { InlineEdit } from "./InlineEdit";
-import { Separator } from "@/components/ui/separator";
+import { Separator } from "./ui/separator";
 import { AppDispatch, RootState } from "@/redux/store";
 import { DateTimePickerForm } from "./DateTimePickerForm";
 import { addNewCard, reviseCard } from "@/redux/slices/boardSlice";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+  Select,
+  SelectItem,
+  SelectValue,
+  SelectContent,
+  SelectTrigger,
+} from "./ui/select";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
+  LuX,
   LuText,
   LuCheck,
   LuCircle,
@@ -29,15 +30,8 @@ import {
   LuArrowUpDown,
   LuChevronDown,
   LuCalendarRange,
-  LuX,
+  LuSquareCheckBig,
 } from "react-icons/lu";
-import {
-  Select,
-  SelectItem,
-  SelectValue,
-  SelectContent,
-  SelectTrigger,
-} from "@/components/ui/select";
 
 export default function CardDialog({
   list,
@@ -63,6 +57,7 @@ export default function CardDialog({
     dueDate: cardData?.dueDate || null,
     isCompleted: cardData?.isCompleted || false,
     position: cardData?.position || list.cards.length,
+    checklist: cardData?.checklist || [],
   });
   const { title, description, listId, priority, dueDate, isCompleted } =
     cardDetails;
@@ -77,6 +72,36 @@ export default function CardDialog({
   const handleDateSubmit = (date: Date) => {
     handleChange("dueDate", date.toISOString());
     setOpen(false);
+  };
+
+  const handleAddChecklist = () => {
+    const newChecklist = [
+      ...cardDetails.checklist,
+      {
+        id: Math.random().toString(36).substring(2, 9),
+        title: "",
+        isChecked: false,
+      },
+    ];
+    setCardDetails({ ...cardDetails, checklist: newChecklist });
+  };
+
+  const handleChecklistChange = (
+    id: string,
+    field: "isChecked" | "title",
+    value: string | boolean
+  ) => {
+    const updatedChecklist = cardDetails.checklist.map((item) =>
+      item.id === id ? { ...item, [field]: value } : item
+    );
+    setCardDetails({ ...cardDetails, checklist: updatedChecklist });
+  };
+
+  const handleRemoveChecklistItem = (id: string) => {
+    const filteredChecklist = cardDetails.checklist.filter(
+      (item) => item.id !== id
+    );
+    setCardDetails({ ...cardDetails, checklist: filteredChecklist });
   };
 
   const handleSubmit = async () => {
@@ -133,7 +158,7 @@ export default function CardDialog({
       <Separator className="my-1" />
 
       <div className="flex gap-4">
-        <div className="flex-1">
+        <div className="flex-1 max-h-[calc(100vh-160px)] overflow-y-auto">
           <div className="flex items-center gap-2 mb-4">
             <Tooltip>
               <TooltipTrigger asChild>
@@ -232,6 +257,48 @@ export default function CardDialog({
             </div>
           )}
 
+          <div className="space-y-2 my-2">
+            {cardDetails.checklist.length > 0 && (
+              <div className="flex items-center gap-2 mb-2">
+                <LuSquareCheckBig className="size-5" />
+                <span className="font-semibold">Checklist</span>
+              </div>
+            )}
+
+            {cardDetails.checklist.map((item) => (
+              <div key={item.id} className="group flex items-center gap-2">
+                <Checkbox
+                  checked={item.isChecked}
+                  onCheckedChange={(checked) =>
+                    handleChecklistChange(
+                      item.id,
+                      "isChecked",
+                      checked as boolean
+                    )
+                  }
+                  className="rounded-md w-5 h-5"
+                />
+                <InlineEdit
+                  value={item.title}
+                  onChange={(value) =>
+                    handleChecklistChange(item.id, "title", value)
+                  }
+                  className={`flex-1 ${
+                    item.isChecked ? "line-through text-muted-foreground" : ""
+                  }`}
+                />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="opacity-0 group-hover:opacity-100 w-6 h-6"
+                  onClick={() => handleRemoveChecklistItem(item.id)}
+                >
+                  <LuX className="size-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
+
           <Button
             disabled={!title.trim() || cardLoading}
             onClick={handleSubmit}
@@ -300,6 +367,15 @@ export default function CardDialog({
               />
             </PopoverContent>
           </Popover>
+
+          <Button
+            variant="outline"
+            className="flex justify-start items-center w-full font-normal text-muted-foreground hover:text-muted-foreground"
+            onClick={handleAddChecklist}
+          >
+            <LuSquareCheckBig className="size-4" />
+            <span>Add Checklist</span>
+          </Button>
         </div>
       </div>
     </>
