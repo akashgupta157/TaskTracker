@@ -4,42 +4,85 @@ import { Button } from "./ui/button";
 import CardDialog from "./CardDialog";
 import React, { useState } from "react";
 import { LuPlus, LuEllipsis } from "react-icons/lu";
+import { InlineEdit } from "./InlineEdit";
+import { AppDispatch } from "@/redux/store";
+import { useDispatch } from "react-redux";
+import { modifyListTitle, updateListTitle } from "@/redux/slices/boardSlice";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { InlineEdit } from "./InlineEdit";
-import { AppDispatch } from "@/redux/store";
-import { useDispatch } from "react-redux";
-import { modifyListTitle, updateListTitle } from "@/redux/slices/boardSlice";
+} from "./ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
 
 export default function List({ list }: { list: List }) {
   const dispatch = useDispatch<AppDispatch>();
   const [open, setOpen] = useState(false);
   const [listTitle, setListTitle] = useState(list.title);
 
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: list.id, data: { type: "List", list } });
+
+  const style = {
+    transform: CSS.Translate.toString(transform),
+    transition,
+  };
+
   const handleTitleChange = () => {
     if (listTitle === list.title) return;
     dispatch(modifyListTitle({ listId: list.id, title: listTitle }));
     dispatch(updateListTitle({ listId: list.id, title: listTitle }));
   };
+  const handleDeleteList = () => {};
   return (
     <div
-      className={`flex flex-col bg-zinc-100 dark:bg-zinc-950 p-3 rounded-xl min-w-[280px] max-h-[calc(100vh-160px)] font-sans`}
+      ref={setNodeRef}
+      style={style}
+      className={`flex flex-col bg-zinc-100 dark:bg-zinc-950 p-3 rounded-xl min-w-[280px] max-h-[calc(100vh-172px)] font-sans ${
+        isDragging ? "opacity-50" : ""
+      }`}
     >
-      <div className="flex justify-between items-center cursor-grab active:cursor-grabbing">
+      <div
+        {...attributes}
+        {...listeners}
+        className="flex justify-between items-center cursor-grab active:cursor-grabbing"
+      >
         <InlineEdit
           value={listTitle}
           onChange={setListTitle}
           onCommit={handleTitleChange}
           className="px-2 font-bold cursor-pointer"
         />
-        <Button variant="ghost" type="button" size="icon">
-          <LuEllipsis className="size-5" />
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="w-8 h-8">
+              <LuEllipsis className="size-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem
+              onSelect={handleDeleteList}
+              className="text-red-600 focus:text-red-600 dark:focus:text-red-400 dark:text-red-400"
+            >
+              Delete list
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <div className="flex-1 space-y-3 my-2 overflow-hidden overflow-y-auto">
