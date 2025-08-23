@@ -1,3 +1,4 @@
+import { handleApiError } from "@/lib/utils";
 import { BoardState, Card, List } from "@/types";
 import { createBoard, fetchBoards, fetchBoardDetails } from "@/lib/api/board";
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
@@ -12,7 +13,6 @@ import {
   changeCardPosition,
   toggleCardComplete,
 } from "@/lib/api/card";
-import { handleApiError } from "@/lib/utils";
 
 const initialState: BoardState = {
   boards: [],
@@ -175,7 +175,7 @@ const boardSlice = createSlice({
         if (cardIndex !== -1) {
           currentListIndex = i;
           currentCardIndex = cardIndex;
-          cardToMove = lists[i].cards[cardIndex];
+          cardToMove = { ...lists[i].cards[cardIndex] }; // Create a copy
           break;
         }
       }
@@ -189,46 +189,63 @@ const boardSlice = createSlice({
       if (currentListIndex !== -1 && currentCardIndex !== -1) {
         lists[currentListIndex].cards.splice(currentCardIndex, 1);
 
-        // Update positions in the old list (if moving between lists)
-        if (!isSameList) {
-          lists[currentListIndex].cards.forEach((card, index) => {
-            card.position = index;
-          });
-        }
+        // Update positions in the old list
+        lists[currentListIndex].cards.forEach((card, index) => {
+          card.position = index;
+        });
       }
 
       // 2. Find the new list
       const newListIndex = lists.findIndex((list) => list.id === newListId);
       if (newListIndex === -1) return;
 
-      // 3. Make space in the new list
-      if (isSameList && newPosition < currentCardIndex) {
-        // Moving up in the same list
-        for (let i = newPosition; i < currentCardIndex; i++) {
-          lists[newListIndex].cards[i].position += 1;
+      // 3. Make sure cards array exists
+      if (!lists[newListIndex].cards) {
+        lists[newListIndex].cards = [];
+      }
+
+      // 4. Adjust positions in the target list to make space
+      if (isSameList) {
+        // Moving within the same list
+        if (newPosition < currentCardIndex) {
+          // Moving up: shift cards from newPosition to currentCardIndex-1 down
+          for (let i = newPosition; i < currentCardIndex; i++) {
+            if (lists[newListIndex].cards[i]) {
+              lists[newListIndex].cards[i].position += 1;
+            }
+          }
+        } else if (newPosition > currentCardIndex) {
+          // Moving down: shift cards from currentCardIndex+1 to newPosition up
+          for (let i = currentCardIndex + 1; i <= newPosition; i++) {
+            if (lists[newListIndex].cards[i]) {
+              lists[newListIndex].cards[i].position -= 1;
+            }
+          }
         }
-      } else if (isSameList && newPosition > currentCardIndex) {
-        // Moving down in the same list
-        for (let i = currentCardIndex + 1; i <= newPosition; i++) {
-          lists[newListIndex].cards[i].position -= 1;
-        }
-      } else if (!isSameList) {
-        // Moving to a different list
+      } else {
+        // Moving to different list: shift all cards from newPosition onward down
         for (let i = newPosition; i < lists[newListIndex].cards.length; i++) {
-          lists[newListIndex].cards[i].position += 1;
+          if (lists[newListIndex].cards[i]) {
+            lists[newListIndex].cards[i].position += 1;
+          }
         }
       }
 
-      // 4. Insert card at new position
+      // 5. Insert card at new position
       const updatedCard = {
         ...cardToMove,
         position: newPosition,
         listId: newListId,
       };
 
-      lists[newListIndex].cards.splice(newPosition, 0, updatedCard);
+      // Make sure we don't go out of bounds
+      const safePosition = Math.min(
+        newPosition,
+        lists[newListIndex].cards.length
+      );
+      lists[newListIndex].cards.splice(safePosition, 0, updatedCard);
 
-      // 5. Normalize positions in the new list
+      // 6. Normalize positions in the new list (0, 1, 2, ...)
       lists[newListIndex].cards.forEach((card, index) => {
         card.position = index;
       });

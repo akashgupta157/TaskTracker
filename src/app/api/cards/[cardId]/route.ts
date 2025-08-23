@@ -1,8 +1,8 @@
 import prisma from "@/lib/prisma";
 import { Card } from "@/generated/prisma";
+import { handleApiError } from "@/lib/utils";
 import { PrismaClient } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
-import { handleApiError } from "@/lib/utils";
 
 export async function PATCH(
   request: NextRequest,
@@ -47,11 +47,11 @@ export async function PATCH(
     const isSameList = currentListId === newListId;
 
     // Start a transaction
-    const result = await prisma.$transaction(async (prisma) => {
+    const result = await prisma.$transaction(async (tx) => {
       // 1. Remove card from current list (if moving between lists)
       if (!isSameList) {
         // Update positions in the old list
-        await prisma.card.updateMany({
+        await tx.card.updateMany({
           where: {
             listId: currentListId,
             position: { gt: cardToMove.position },
@@ -63,7 +63,7 @@ export async function PATCH(
       }
 
       // 2. Make space in the new list
-      await prisma.card.updateMany({
+      await tx.card.updateMany({
         where: {
           listId: newListId,
           position: { gte: newPosition },
@@ -74,7 +74,7 @@ export async function PATCH(
       });
 
       // 3. Move the card to its new position
-      const updatedCard = await prisma.card.update({
+      const updatedCard = await tx.card.update({
         where: { id: cardId },
         data: {
           position: newPosition,
@@ -87,9 +87,9 @@ export async function PATCH(
 
       // 4. Normalize positions in both lists
       if (!isSameList) {
-        await normalizeListPositions(prisma, currentListId);
+        await normalizeListPositions(tx, currentListId);
       }
-      await normalizeListPositions(prisma, newListId);
+      await normalizeListPositions(tx, newListId);
 
       return updatedCard;
     });
@@ -102,18 +102,18 @@ export async function PATCH(
 }
 
 // Helper function to normalize positions in a list (0, 1, 2, ...)
-async function normalizeListPositions(prisma: PrismaClient, listId: string) {
-  const cards = await prisma.card.findMany({
+async function normalizeListPositions(tx: PrismaClient, listId: string) {
+  const cards = await tx.card.findMany({
     where: { listId },
     orderBy: { position: "asc" },
   });
 
   const updates = cards.map((card: Card, index: number) =>
-    prisma.card.update({
+    tx.card.update({
       where: { id: card.id },
       data: { position: index },
     })
   );
 
-  await prisma.$transaction(updates);
+  await Promise.all(updates);
 }

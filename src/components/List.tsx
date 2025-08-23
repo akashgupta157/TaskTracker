@@ -2,14 +2,14 @@ import Card from "./Card";
 import type { List } from "@/types";
 import { Button } from "./ui/button";
 import CardDialog from "./CardDialog";
-import React, { useState } from "react";
-import { LuPlus, LuEllipsis } from "react-icons/lu";
-import { InlineEdit } from "./InlineEdit";
-import { AppDispatch } from "@/redux/store";
-import { useDispatch } from "react-redux";
-import { modifyListTitle, updateListTitle } from "@/redux/slices/boardSlice";
-import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { InlineEdit } from "./InlineEdit";
+import { useDispatch } from "react-redux";
+import { AppDispatch } from "@/redux/store";
+import React, { useMemo, useState } from "react";
+import { LuPlus, LuEllipsis } from "react-icons/lu";
+import { SortableContext, useSortable } from "@dnd-kit/sortable";
+import { modifyListTitle, updateListTitle } from "@/redux/slices/boardSlice";
 import {
   Dialog,
   DialogContent,
@@ -28,6 +28,10 @@ export default function List({ list }: { list: List }) {
   const dispatch = useDispatch<AppDispatch>();
   const [open, setOpen] = useState(false);
   const [listTitle, setListTitle] = useState(list.title);
+
+  const cardIds = useMemo(() => {
+    return list.cards?.map((card) => card.id as string) || [];
+  }, [list.cards]);
 
   const {
     attributes,
@@ -53,6 +57,8 @@ export default function List({ list }: { list: List }) {
     <div
       ref={setNodeRef}
       style={style}
+      data-list-id={list.id}
+      data-type="List"
       className={`flex flex-col bg-zinc-100 dark:bg-zinc-950 p-3 rounded-xl min-w-[280px] max-h-[calc(100vh-172px)] font-sans ${
         isDragging ? "opacity-50" : ""
       }`}
@@ -86,9 +92,11 @@ export default function List({ list }: { list: List }) {
       </div>
 
       <div className="flex-1 space-y-3 my-2 overflow-hidden overflow-y-auto">
-        {list.cards?.map((card) => (
-          <Card key={card.id} card={card} list={list} />
-        ))}
+        <SortableContext items={cardIds}>
+          {list.cards?.map((card) => (
+            <Card key={card.id} card={card} list={list} />
+          ))}
+        </SortableContext>
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>

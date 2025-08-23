@@ -2,6 +2,8 @@ import CardDialog from "./CardDialog";
 import React, { useState } from "react";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "@/redux/store";
+import { CSS } from "@dnd-kit/utilities";
+import { useSortable } from "@dnd-kit/sortable";
 import type { Card as CardType, List } from "@/types";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 import { toggleCard, toggleCardIsComplete } from "@/redux/slices/boardSlice";
@@ -25,6 +27,27 @@ export default function Card({ card, list }: { card: CardType; list: List }) {
   const dispatch = useDispatch<AppDispatch>();
   const [open, setOpen] = useState(false);
 
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: card.id as string,
+    data: {
+      type: "Card",
+      card,
+      list,
+    },
+  });
+
+  const style = {
+    transition,
+    transform: CSS.Translate.toString(transform),
+  };
+
   const dueDate = new Date(card.dueDate || "");
   const istNow = new Date(
     new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
@@ -43,7 +66,14 @@ export default function Card({ card, list }: { card: CardType; list: List }) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <div
-          className={`space-y-2 bg-card/60 p-3 border-2 rounded-xl font-sans cursor-pointer border-muted hover:border-white`}
+          ref={setNodeRef}
+          id={card.id as string}
+          style={style}
+          {...attributes}
+          {...listeners}
+          className={`space-y-2 bg-card/60 p-3 border-2 rounded-xl font-sans cursor-pointer border-muted hover:border-white ${
+            isDragging ? "opacity-50" : ""
+          }`}
         >
           {(card.description && card.description !== "<p></p>") ||
           (card.checklist && card.checklist.length > 0) ||

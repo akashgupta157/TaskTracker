@@ -1,30 +1,37 @@
 import List from "./List";
+import Card from "./Card";
 import { Board } from "@/types";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { LuPlus } from "react-icons/lu";
+import { createPortal } from "react-dom";
+import { Skeleton } from "./ui/skeleton";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "@/redux/store";
 import { RiCloseLine } from "react-icons/ri";
 import React, { useMemo, useState } from "react";
-import { Skeleton } from "./ui/skeleton";
+import { SortableContext } from "@dnd-kit/sortable";
+import type { List as ListType, Card as CardType } from "@/types";
 import {
   DndContext,
   DragEndEvent,
   DragOverlay,
   DragStartEvent,
+  DragOverEvent,
   PointerSensor,
   useSensor,
   useSensors,
+  CollisionDetection,
+  rectIntersection,
+  pointerWithin,
 } from "@dnd-kit/core";
-import { SortableContext } from "@dnd-kit/sortable";
 import {
   moveList,
   addNewList,
   updateListPosition,
+  moveCard,
+  updateCardPosition,
 } from "@/redux/slices/boardSlice";
-import type { List as ListType } from "@/types";
-import { createPortal } from "react-dom";
 
 export default function ListContainer({
   currentBoard,
@@ -37,6 +44,8 @@ export default function ListContainer({
   const [isNewList, setIsNewList] = useState(false);
   const [newListTitle, setNewListTitle] = useState("");
   const [activeList, setActiveList] = useState<ListType | null>(null);
+  const [activeCard, setActiveCard] = useState<CardType | null>(null);
+  const [activeCardList, setActiveCardList] = useState<ListType | null>(null);
 
   const listId = useMemo(
     () => currentBoard?.lists.map((list) => list.id) || [],
@@ -49,40 +58,146 @@ export default function ListContainer({
     })
   );
 
+  const collisionDetectionStrategy: CollisionDetection = (args) => {
+    const { active, droppableContainers } = args;
+    if (active.data.current?.type === "List") {
+      const listCollisions = rectIntersection({
+        ...args,
+        droppableContainers: droppableContainers.filter(
+          (container) => container.data.current?.type === "List"
+        ),
+      });
+      if (listCollisions.length > 0) {
+        return listCollisions;
+      }
+      return rectIntersection(args);
+    }
+    if (active.data.current?.type === "Card") {
+      return pointerWithin(args);
+    }
+    return rectIntersection(args);
+  };
+
   const handleDragStart = (event: DragStartEvent) => {
     if (event.active.data.current?.type === "List") {
       setActiveList(event.active.data.current.list);
+      return;
+    } else if (event.active.data.current?.type === "Card") {
+      setActiveCard(event.active.data.current.card);
+      setActiveCardList(event.active.data.current.list);
+      return;
     }
   };
 
-  // const handleDragOver = (event: ) => {}
+  const handleDragOver = (event: DragOverEvent) => {
+    const { active, over } = event;
+    if (!over) return;
+
+    const activeId = active.id;
+    const overId = over.id;
+
+    if (activeId === overId) return;
+
+    if (active.data.current?.type === "Card") {
+      const activeCardData = active.data.current.card;
+
+      if (over.data.current?.type === "Card") {
+        const overCardData = over.data.current.card;
+
+        if (
+          activeCardData.listId !== overCardData.listId ||
+          activeCardData.position !== overCardData.position
+        ) {
+          dispatch(
+            moveCard({
+              cardId: activeCardData.id,
+              listId: overCardData.listId,
+              newPosition: overCardData.position,
+            })
+          );
+        }
+      } else if (over.data.current?.type === "List") {
+        const overListData = over.data.current.list;
+        const newPosition = overListData.cards?.length || 0;
+
+        if (activeCardData.listId !== overListData.id) {
+          dispatch(
+            moveCard({
+              cardId: activeCardData.id,
+              listId: overListData.id,
+              newPosition,
+            })
+          );
+        }
+      }
+    }
+  };
 
   const handleDragEnd = (event: DragEndEvent) => {
-    setActiveList(null);
     const { active, over } = event;
-    if (!over || active.id === over.id) return;
+
+    setActiveList(null);
+    setActiveCard(null);
+    setActiveCardList(null);
+
+    if (!over) return;
+
     if (
       active.data.current?.type === "List" &&
       over.data.current?.type === "List"
     ) {
-      dispatch(
-        moveList({
-          listId: active.data.current.list.id,
-          newPosition: over.data.current.list.position,
-        })
-      );
-      dispatch(
-        updateListPosition({
-          boardId: currentBoard?.id ?? "",
-          listId: active.data.current.list.id,
-          newPosition: over.data.current.list.position,
-        })
-      );
+      const activeListData = active.data.current.list;
+      const overListData = over.data.current.list;
+      console.log(activeListData, overListData);
+      if (activeListData.id !== overListData.id) {
+        dispatch(
+          moveList({
+            listId: activeListData.id,
+            newPosition: overListData.position,
+          })
+        );
+        dispatch(
+          updateListPosition({
+            boardId: currentBoard?.id ?? "",
+            listId: activeListData.id,
+            newPosition: overListData.position,
+          })
+        );
+      }
+    }
+
+    if (active.data.current?.type === "Card") {
+      const activeCardData = active.data.current.card;
+
+      if (over.data.current?.type === "Card") {
+        const overCardData = over.data.current.card;
+
+        dispatch(
+          updateCardPosition({
+            cardId: activeCardData.id,
+            listId: overCardData.listId,
+            newPosition: overCardData.position,
+          })
+        );
+      } else if (over.data.current?.type === "List") {
+        const overListData = over.data.current.list;
+        const newPosition = overListData.cards?.length || 0;
+
+        dispatch(
+          updateCardPosition({
+            cardId: activeCardData.id,
+            listId: overListData.id,
+            newPosition,
+          })
+        );
+      }
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!newListTitle.trim()) return;
+
     await dispatch(
       addNewList({
         title: newListTitle.trim(),
@@ -113,8 +228,9 @@ export default function ListContainer({
     <div className="flex items-start space-x-5 p-5 w-full h-full overflow-x-auto font-sans">
       <DndContext
         sensors={sensors}
+        collisionDetection={collisionDetectionStrategy}
         onDragStart={handleDragStart}
-        // onDragOver={handleDragOver}
+        onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
         <SortableContext items={listId}>
@@ -124,7 +240,12 @@ export default function ListContainer({
         </SortableContext>
 
         {createPortal(
-          <DragOverlay>{activeList && <List list={activeList} />}</DragOverlay>,
+          <DragOverlay>
+            {activeList && <List list={activeList} />}
+            {activeCard && activeCardList && (
+              <Card card={activeCard} list={activeCardList} />
+            )}
+          </DragOverlay>,
           document.body
         )}
       </DndContext>
