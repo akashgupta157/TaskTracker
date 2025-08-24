@@ -44,7 +44,6 @@ export async function PATCH(
     const currentListId = cardToMove.listId;
     const isSameList = currentListId === newListId;
 
-    // Keep the transaction short: just the shifting + moving
     const result = await prisma.$transaction(async (tx) => {
       if (!isSameList) {
         await tx.card.updateMany({
@@ -82,7 +81,6 @@ export async function PATCH(
       return updatedCard;
     });
 
-    // Normalize AFTER the transaction
     if (!isSameList) {
       await normalizeListPositions(prisma, currentListId);
     }
@@ -95,7 +93,6 @@ export async function PATCH(
   }
 }
 
-// Helper: normalize positions in a list (0, 1, 2, ...)
 async function normalizeListPositions(tx: PrismaClient, listId: string) {
   const cards = await tx.card.findMany({
     where: { listId },

@@ -43,7 +43,7 @@ export default function Home() {
           </p>
 
           <button
-            className="block bg-[#5146b8] hover:bg-[#5146b8]/90 mx-auto px-6 sm:px-8 py-2 rounded-full font-medium text-white text-base sm:text-lg transition-colors duration-300 cursor-pointer"
+            className="block bg-[#5146b8] hover:bg-[#5146b8]/90 mx-auto px-6 sm:px-10 py-1.5 rounded-xl font-medium text-white transition-colors duration-300 cursor-pointer"
             onClick={() => signIn("google")}
           >
             Get Started
