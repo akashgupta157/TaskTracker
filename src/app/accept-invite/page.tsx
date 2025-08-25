@@ -4,6 +4,7 @@ import { LuLoader } from "react-icons/lu";
 import { useEffect, useState, Suspense } from "react";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { toast } from "sonner";
 
 function AcceptInviteContent() {
   const router = useRouter();
@@ -40,6 +41,7 @@ function AcceptInviteContent() {
           if (session.user.email === email) {
             await axios.post("/api/invitations/accept", { token });
             router.push(`/board/${boardId}`);
+            toast.success("Welcome to the board!");
           } else {
             setError(`Please sign in with ${email} to accept this invitation`);
             setLoading(false);
