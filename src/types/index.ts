@@ -24,8 +24,8 @@ export type Board = {
   id: string;
   title: string;
   description?: string;
-  admin: string;
-  user: User;
+  adminId: string;
+  admin: User;
   background: string;
   createdAt: string;
   updatedAt: string;
@@ -48,16 +48,19 @@ export type Card = {
   title: string;
   description?: string | null;
   position: number;
-  priority?: string | null;
+  priority?: Priority | null;
   isCompleted: boolean;
-  assignedTo?: string | null;
   listId: string;
   dueDate?: string | null;
-  checklist?: ChecklistItem[];
+  checklist?: ChecklistItem[] | null;
   createdAt?: string;
   updatedAt?: string;
-  attachments?: Attachment[];
-  boardMembers?: BoardMember[];
+  attachments?: Attachment[] | null;
+};
+
+export type Attachment = {
+  name: string;
+  url: string;
 };
 
 export type ChecklistItem = {
@@ -66,21 +69,29 @@ export type ChecklistItem = {
   isChecked: boolean;
 };
 
-export type Attachment = {
-  id: string;
-  url: string;
-  type: string;
-  name: string;
-  cardId: string;
-  createdAt: string;
-};
-
 export type BoardMember = {
   id: string;
   boardId: string;
   userId: string;
   user: User;
-  role: string;
-  cardId?: string;
+  role: Role;
   createdAt: string;
 };
+
+export enum Priority {
+  LOW = "LOW",
+  MEDIUM = "MEDIUM",
+  HIGH = "HIGH",
+}
+
+export enum Role {
+  ADMIN = "ADMIN",
+  MEMBER = "MEMBER",
+}
+
+export enum InvitationStatus {
+  PENDING = "PENDING",
+  ACCEPTED = "ACCEPTED",
+  REJECTED = "REJECTED",
+  EXPIRED = "EXPIRED",
+}

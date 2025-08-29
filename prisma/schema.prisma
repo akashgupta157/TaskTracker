@@ -12,16 +12,17 @@ datasource db {
 }
 
 model User {
-  id          String        @id @default(cuid())
-  email       String        @unique
-  name        String?
-  image       String?
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  Board       Board[]
-  BoardMember BoardMember[]
-  Card        Card[]
-  Invitation  Invitation[]
+  id           String        @id @default(cuid())
+  email        String        @unique
+  name         String?
+  image        String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  boards       Board[]       @relation("BoardAdmin")
+  boardMembers BoardMember[]
+  invitations  Invitation[]
+
+  @@map("users")
 }
 
 model Board {
@@ -31,23 +32,29 @@ model Board {
   background  String?
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
-  admin       String
-  user        User          @relation(fields: [admin], references: [id])
+  adminId     String
+  admin       User          @relation("BoardAdmin", fields: [adminId], references: [id], onDelete: Cascade)
   lists       List[]
   members     BoardMember[]
-  Invitation  Invitation[]
+  invitations Invitation[]
+
+  @@index([adminId])
+  @@map("boards")
 }
 
 model BoardMember {
   id        String   @id @default(cuid())
   boardId   String
-  board     Board    @relation(fields: [boardId], references: [id])
+  board     Board    @relation(fields: [boardId], references: [id], onDelete: Cascade)
   userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  role      String   @default("MEMBER")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      Role     @default(MEMBER)
   createdAt DateTime @default(now())
-  Card      Card?    @relation(fields: [cardId], references: [id])
-  cardId    String?
+
+  @@unique([boardId, userId])
+  @@index([userId])
+  @@index([boardId])
+  @@map("board_members")
 }
 
 model List {
@@ -55,46 +62,43 @@ model List {
   title     String
   position  Int
   boardId   String
-  board     Board    @relation(fields: [boardId], references: [id])
+  board     Board    @relation(fields: [boardId], references: [id], onDelete: Cascade)
   cards     Card[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@unique([boardId, position])
+  @@index([boardId])
+  @@index([boardId, position])
+  @@map("lists")
 }
 
 model Card {
-  id             String        @id @default(cuid())
-  title          String
-  description    String?
-  position       Int
-  priority       String?
-  isCompleted    Boolean       @default(false)
-  assignedTo     String?
-  assignedToUser User?         @relation(fields: [assignedTo], references: [id])
-  listId         String
-  list           List          @relation(fields: [listId], references: [id])
-  dueDate        DateTime?
-  checklist      Json? // [{ title: "Do this", isChecked: false }]
-  attachments    Attachment[]
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  BoardMember    BoardMember[]
-}
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  position    Int
+  priority    Priority?
+  isCompleted Boolean   @default(false)
+  listId      String
+  list        List      @relation(fields: [listId], references: [id], onDelete: Cascade)
+  dueDate     DateTime?
+  checklist   Json?
+  attachments Json?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
-model Attachment {
-  id        String   @id @default(cuid())
-  url       String
-  type      String // 'image', 'file', 'link'
-  name      String
-  cardId    String
-  card      Card     @relation(fields: [cardId], references: [id])
-  createdAt DateTime @default(now())
+  @@index([listId])
+  @@index([listId, position])
+  @@index([isCompleted])
+  @@map("cards")
 }
 
 model Invitation {
   id        String           @id @default(cuid())
   email     String
   boardId   String
-  board     Board            @relation(fields: [boardId], references: [id])
+  board     Board            @relation(fields: [boardId], references: [id], onDelete: Cascade)
   token     String           @unique
   createdAt DateTime         @default(now())
   expiresAt DateTime         @default(dbgenerated("(now() + interval '24 hours')"))
@@ -103,6 +107,10 @@ model Invitation {
   inviter   User             @relation(fields: [inviterId], references: [id])
 
   @@unique([email, boardId])
+  @@index([token])
+  @@index([email])
+  @@index([expiresAt])
+  @@map("invitations")
 }
 
 enum InvitationStatus {
@@ -110,4 +118,15 @@ enum InvitationStatus {
   ACCEPTED
   REJECTED
   EXPIRED
+}
+
+enum Role {
+  ADMIN
+  MEMBER
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
 }

@@ -1,13 +1,9 @@
-import { Resend } from "resend";
 import prisma from "@/lib/prisma";
 import { randomBytes } from "crypto";
 import { handleApiError } from "@/lib/utils";
 import { authOptions } from "@/utils/authOption";
 import { getServerSession, Session } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
-import BoardInvitationEmail from "@/components/email/InvitationEmail";
-
-const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(
   request: NextRequest,
@@ -26,7 +22,7 @@ export async function POST(
     }
 
     const board = await prisma.board.findUnique({
-      where: { id: boardId as string, admin: session.user.id },
+      where: { id: boardId as string, adminId: session.user.id },
     });
 
     if (!board) {
@@ -47,6 +43,22 @@ export async function POST(
       );
     }
 
+    const existingInvitation = await prisma.invitation.findUnique({
+      where: {
+        email_boardId: {
+          email,
+          boardId: boardId as string,
+        },
+      },
+    });
+
+    if (existingInvitation && existingInvitation.status === "PENDING") {
+      return NextResponse.json(
+        { message: "Invitation already sent to this email" },
+        { status: 400 }
+      );
+    }
+
     const token = randomBytes(32).toString("hex");
 
     await prisma.invitation.upsert({
@@ -59,7 +71,8 @@ export async function POST(
       update: {
         token,
         status: "PENDING",
-        expiresAt: new Date(Date.now() + 86400000), // 24 hours
+        expiresAt: new Date(Date.now() + 86400000),
+        inviterId: session.user.id,
       },
       create: {
         email,
@@ -71,33 +84,6 @@ export async function POST(
     });
 
     const inviteLink = `${process.env.NEXTAUTH_URL}/accept-invite?token=${token}`;
-
-    try {
-      const { data, error } = await resend.emails.send({
-        from: "TaskTracker <onboarding@resend.dev>",
-        to: email,
-        subject: `🌟 You're invited! Join ${session.user.name} on TaskTracker`,
-        react: BoardInvitationEmail({
-          inviterName: session.user.name || "",
-          inviterEmail: session.user.email || "",
-          boardName: board.title,
-          inviteLink: inviteLink,
-        }),
-      });
-
-      if (error) {
-        console.error("Resend error:", error);
-        return NextResponse.json({
-          message: "Failed to send invitation email",
-        });
-      }
-
-      console.log(data);
-      return NextResponse.json({ message: "Invitation sent successfully" });
-    } catch (error) {
-      const { message, statusCode } = handleApiError(error);
-      return NextResponse.json({ message }, { status: statusCode || 500 });
-    }
   } catch (error) {
     const { message, statusCode } = handleApiError(error);
     return NextResponse.json({ message }, { status: statusCode || 500 });

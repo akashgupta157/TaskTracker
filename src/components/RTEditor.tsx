@@ -1,3 +1,4 @@
+import { toast } from "sonner";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Switch } from "./ui/switch";
@@ -7,6 +8,7 @@ import { Separator } from "./ui/separator";
 import styles from "./RTEditor.module.css";
 import Image from "@tiptap/extension-image";
 import StarterKit from "@tiptap/starter-kit";
+import { isImageUrl, uploadCloudinary } from "@/lib/utils";
 import { TextStyleKit } from "@tiptap/extension-text-style";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import {
@@ -387,27 +389,25 @@ function ImageUpload({ editor }: { editor: Editor }) {
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     setIsUploading(true);
-
     try {
-      // Replace this with your actual image upload logic
       const uploadedUrl = await uploadImage(file);
-
       editor.chain().focus().setImage({ src: uploadedUrl }).run();
-
       setOpen(false);
     } catch (error) {
-      console.error("Image upload failed:", error);
+      toast.error("Failed to upload image");
     } finally {
       setIsUploading(false);
     }
   };
 
   const addImageByUrl = () => {
-    if (imageUrl) {
+    if (imageUrl && isImageUrl(imageUrl)) {
       editor.chain().focus().setImage({ src: imageUrl }).run();
       setOpen(false);
+      setImageUrl("");
+    } else {
+      toast.error("Please enter a valid image URL");
       setImageUrl("");
     }
   };
@@ -470,11 +470,12 @@ function ImageUpload({ editor }: { editor: Editor }) {
   );
 }
 
-// Mock upload function - replace with your actual implementation
 async function uploadImage(file: File): Promise<string> {
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.readAsDataURL(file);
-  });
+  try {
+    const { url } = await uploadCloudinary(file);
+    return url;
+  } catch (error) {
+    console.error("Image upload failed:", error);
+    throw new Error("Failed to upload image to Cloudinary");
+  }
 }

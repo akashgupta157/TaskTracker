@@ -55,17 +55,61 @@ export async function PATCH(
         );
       }
 
-      const filteredLists = lists.filter((list) => list.id !== listId);
-      filteredLists.splice(newPosition, 0, listToMove);
+      const currentPosition = listToMove.position;
+      
+      // If position hasn't changed, no need to update
+      if (currentPosition === newPosition) {
+        return NextResponse.json(
+          { message: "Position unchanged", updatedPosition: newPosition },
+          { status: 200 }
+        );
+      }
 
-      const transaction = filteredLists.map((list, index) =>
-        prisma.list.update({
-          where: { id: list.id },
-          data: { position: index },
-        })
-      );
+      // Create temporary positions to avoid unique constraint violations
+      const tempPosition = -1; // Use a temporary position outside normal range
 
-      await prisma.$transaction(transaction);
+      // First move the list to a temporary position
+      await prisma.list.update({
+        where: { id: listId },
+        data: { position: tempPosition },
+      });
+
+      // Update other lists' positions
+      if (newPosition < currentPosition) {
+        // Moving up - increment positions of lists between newPosition and currentPosition
+        await prisma.list.updateMany({
+          where: {
+            boardId,
+            position: {
+              gte: newPosition,
+              lt: currentPosition,
+            },
+          },
+          data: {
+            position: { increment: 1 },
+          },
+        });
+      } else {
+        // Moving down - decrement positions of lists between currentPosition and newPosition
+        await prisma.list.updateMany({
+          where: {
+            boardId,
+            position: {
+              gt: currentPosition,
+              lte: newPosition,
+            },
+          },
+          data: {
+            position: { decrement: 1 },
+          },
+        });
+      }
+
+      // Finally, move the list to its new position
+      await prisma.list.update({
+        where: { id: listId },
+        data: { position: newPosition },
+      });
     }
 
     return NextResponse.json(

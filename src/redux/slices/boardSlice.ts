@@ -332,7 +332,7 @@ const boardSlice = createSlice({
           state.currentBoard.lists.push(action.payload);
           normalizePositions(
             state.currentBoard.lists.map(
-              (l) => ({ ...l, position: l.position } as unknown as Card)
+              (l) => ({ ...l, position: l.position }) as unknown as Card
             )
           );
         }

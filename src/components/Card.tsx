@@ -77,15 +77,15 @@ export default function Card({ card, list }: { card: CardType; list: List }) {
         >
           {(card.description && card.description !== "<p></p>") ||
           (card.checklist && card.checklist.length > 0) ||
-          card.attachments ||
+          (card.attachments && card.attachments.length > 0) ||
           card.priority ? (
             <div className="flex items-center gap-2">
               {card.priority && (
                 <span
                   className={`text-xs px-3 rounded w-fit text-card font-semibold ${
-                    card.priority === "High"
+                    card.priority === "HIGH"
                       ? "bg-red-500"
-                      : card.priority === "Medium"
+                      : card.priority === "MEDIUM"
                       ? "bg-yellow-500"
                       : "bg-green-500"
                   }`}
@@ -121,7 +121,6 @@ export default function Card({ card, list }: { card: CardType; list: List }) {
                   <Tooltip>
                     <TooltipTrigger className="cursor-pointer">
                       <LuPaperclip />
-                      <p>{card.attachments.length}</p>
                     </TooltipTrigger>
                     <TooltipContent>
                       <p>This card has attachments</p>
@@ -161,7 +160,7 @@ export default function Card({ card, list }: { card: CardType; list: List }) {
             <p className="text-sm break-words line-clamp-100">{card.title}</p>
           </div>
 
-          {card.dueDate || card.assignedTo ? (
+          {card.dueDate ? (
             <div className="flex items-center gap-2">
               {card.dueDate && (
                 <span
@@ -179,14 +178,11 @@ export default function Card({ card, list }: { card: CardType; list: List }) {
                   </p>
                 </span>
               )}
-              {/* {card.assignedTo && (
-                <p className="">Assigned to: {card.assignedTo}</p>
-              )} */}
             </div>
           ) : null}
         </div>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-3xl">
+      <DialogContent className="sm:max-w-4xl">
         <DialogHeader>
           <DialogTitle />
           <CardDialog

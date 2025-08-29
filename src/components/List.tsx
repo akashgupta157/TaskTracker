@@ -7,7 +7,7 @@ import { InlineEdit } from "./InlineEdit";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "@/redux/store";
 import React, { useMemo, useState } from "react";
-import { LuPlus, LuEllipsis } from "react-icons/lu";
+import { LuPlus, LuEllipsis, LuTrash2 } from "react-icons/lu";
 import { SortableContext, useSortable } from "@dnd-kit/sortable";
 import { modifyListTitle, updateListTitle } from "@/redux/slices/boardSlice";
 import {
@@ -83,9 +83,10 @@ export default function List({ list }: { list: List }) {
           <DropdownMenuContent align="end">
             <DropdownMenuItem
               onSelect={handleDeleteList}
-              className="text-red-600 focus:text-red-600 dark:focus:text-red-400 dark:text-red-400"
+              className="text-red-600 focus:text-red-600 dark:focus:text-red-400 dark:text-red-400 cursor-pointer"
             >
-              Delete list
+              <LuTrash2 className="text-red-600 dark:text-red-400" /> Delete
+              list
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -105,7 +106,7 @@ export default function List({ list }: { list: List }) {
             <LuPlus /> Add a card
           </Button>
         </DialogTrigger>
-        <DialogContent className="sm:max-w-3xl">
+        <DialogContent className="sm:max-w-4xl">
           <DialogHeader>
             <DialogTitle />
             <CardDialog list={list} isNew={true} setDialogOpen={setOpen} />

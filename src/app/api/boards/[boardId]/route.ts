@@ -17,7 +17,7 @@ export async function GET(
       where: {
         id: boardId,
         OR: [
-          { admin: session.user.id },
+          { adminId: session.user.id },
           {
             members: {
               some: {
@@ -28,7 +28,7 @@ export async function GET(
         ],
       },
       include: {
-        user: true,
+        admin: true,
         lists: {
           orderBy: { position: "asc" },
           include: {

@@ -1,4 +1,8 @@
+import { toast } from "sonner";
+import Image from "next/image";
 import RTEditor from "./RTEditor";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
 import { Loading } from "./Loading";
 import { Card, List } from "@/types";
 import { Button } from "./ui/button";
@@ -9,6 +13,7 @@ import { useSelector } from "react-redux";
 import { useDispatch } from "react-redux";
 import { InlineEdit } from "./InlineEdit";
 import { Separator } from "./ui/separator";
+import { uploadSupabase } from "@/lib/utils";
 import { AppDispatch, RootState } from "@/redux/store";
 import { DateTimePickerForm } from "./DateTimePickerForm";
 import { addNewCard, reviseCard } from "@/redux/slices/boardSlice";
@@ -25,8 +30,11 @@ import {
   LuX,
   LuText,
   LuCheck,
+  LuSearch,
   LuCircle,
   LuCaptions,
+  LuPaperclip,
+  LuUsersRound,
   LuArrowUpDown,
   LuChevronDown,
   LuCalendarRange,
@@ -45,10 +53,13 @@ export default function CardDialog({
   setDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
   const dispatch = useDispatch<AppDispatch>();
-  const [open, setOpen] = useState(false);
+
   const { currentBoard, cardLoading } = useSelector(
     (state: RootState) => state.board
   );
+  const [open, setOpen] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+
   const [cardDetails, setCardDetails] = useState({
     title: cardData?.title || "",
     description: cardData?.description || null,
@@ -56,15 +67,23 @@ export default function CardDialog({
     priority: cardData?.priority || null,
     dueDate: cardData?.dueDate || null,
     isCompleted: cardData?.isCompleted || false,
-    position: cardData?.position || list.cards.length,
+    position: cardData?.position || list.cards.length || 0,
     checklist: cardData?.checklist || [],
+    attachments: cardData?.attachments || [],
   });
-  const { title, description, listId, priority, dueDate, isCompleted } =
-    cardDetails;
+  const {
+    title,
+    description,
+    listId,
+    priority,
+    dueDate,
+    isCompleted,
+    attachments,
+  } = cardDetails;
 
   const handleChange = <T extends keyof typeof cardDetails>(
     field: T,
-    value: (typeof cardDetails)[T] | boolean
+    value: (typeof cardDetails)[T] | string | null
   ) => {
     setCardDetails({ ...cardDetails, [field]: value });
   };
@@ -104,9 +123,53 @@ export default function CardDialog({
     setCardDetails({ ...cardDetails, checklist: filteredChecklist });
   };
 
+  const handleAttachmentUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    event.target.value = "";
+
+    setIsUploading(true);
+    const toastId = toast.loading(`Uploading ${file.name}...`);
+
+    try {
+      const result = await uploadSupabase(file);
+      const newAttachment = {
+        name: file.name,
+        url: result,
+      };
+      const newAttachments = [...cardDetails.attachments, newAttachment];
+      setCardDetails({ ...cardDetails, attachments: newAttachments });
+
+      toast.success(`File uploaded successfully!`, { id: toastId });
+    } catch (error) {
+      console.error("Upload error:", error);
+      toast.error(
+        `Failed to upload file: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`,
+        {
+          id: toastId,
+        }
+      );
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleRemoveAttachment = (index: number) => {
+    const newAttachments = [...cardDetails.attachments];
+    newAttachments.splice(index, 1);
+    setCardDetails({ ...cardDetails, attachments: newAttachments });
+  };
+
   const handleSubmit = async () => {
     const filteredCard = Object.fromEntries(
-      Object.entries(cardDetails).filter(([_, value]) => value !== null)
+      Object.entries({
+        ...cardDetails,
+      }).filter(([_, value]) => value !== null)
     ) as unknown as Card;
 
     const newPosition =
@@ -216,9 +279,9 @@ export default function CardDialog({
                 </div>
                 <p
                   className={`font-bold ${
-                    priority === "High"
+                    priority === "HIGH"
                       ? "text-red-500"
-                      : priority === "Medium"
+                      : priority === "MEDIUM"
                       ? "text-yellow-500"
                       : "text-green-500"
                   }`}
@@ -299,6 +362,47 @@ export default function CardDialog({
             ))}
           </div>
 
+          {attachments && attachments.length > 0 && (
+            <div className="space-y-2 my-2">
+              <div className="flex items-center gap-2 mb-2">
+                <LuPaperclip className="size-5" />
+                <span className="font-semibold">Attachments</span>
+              </div>
+              <div className="space-y-3 p-2">
+                {attachments.map((attachment, index) => (
+                  <div
+                    key={index}
+                    className="group flex justify-between items-center gap-2 cursor-pointer"
+                  >
+                    <div
+                      className="flex items-center gap-2"
+                      onClick={() => {
+                        window.open(attachment.url, "_blank");
+                      }}
+                    >
+                      <div className="flex justify-center items-center bg-muted-foreground px-1 rounded-md min-w-10 h-10">
+                        <p className="font-semibold uppercase">
+                          {attachment.name.split(".")[1]}
+                        </p>
+                      </div>
+                      <span className="font-semibold text-sm">
+                        {attachment.name}
+                      </span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="opacity-0 group-hover:opacity-100 w-6 h-6"
+                      onClick={() => handleRemoveAttachment(index)}
+                    >
+                      <LuX className="size-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <Button
             disabled={!title.trim() || cardLoading}
             onClick={handleSubmit}
@@ -311,7 +415,7 @@ export default function CardDialog({
         <div className="space-y-4">
           <Select
             value={priority || ""}
-            onValueChange={(value) => handleChange("priority", value || null)}
+            onValueChange={(value) => handleChange("priority", value)}
           >
             <SelectTrigger className="w-[180px]">
               <SelectValue
@@ -324,19 +428,19 @@ export default function CardDialog({
               />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="High">
+              <SelectItem value="HIGH">
                 <div className="flex items-center gap-2">
                   <span className="bg-red-500 w-10 h-3" />
                   <span>High</span>
                 </div>
               </SelectItem>
-              <SelectItem value="Medium">
+              <SelectItem value="MEDIUM">
                 <div className="flex items-center gap-2">
                   <span className="bg-yellow-500 w-10 h-3" />
                   <span>Medium</span>
                 </div>
               </SelectItem>
-              <SelectItem value="Low">
+              <SelectItem value="LOW">
                 <div className="flex items-center gap-2">
                   <span className="bg-green-500 w-10 h-3" />
                   <span>Low</span>
@@ -376,6 +480,40 @@ export default function CardDialog({
             <LuSquareCheckBig className="size-4" />
             <span>Add Checklist</span>
           </Button>
+
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className="flex justify-start items-center w-full font-normal text-muted-foreground hover:text-muted-foreground"
+              >
+                <LuPaperclip className="size-4" />
+                <span>Attachment</span>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="p-4 w-80" align="start">
+              <div className="space-y-2">
+                <Label className="font-semibold">Attach</Label>
+                <p className="text-muted-foreground text-sm">
+                  Select a file to attach
+                </p>
+                <div>
+                  <Label className="block cursor-pointer">
+                    <span className="sr-only">Choose a file</span>
+                    <Input
+                      type="file"
+                      className="hidden"
+                      onChange={handleAttachmentUpload}
+                      disabled={isUploading}
+                    />
+                    <Button variant="outline" className="w-full" asChild>
+                      <span>Choose a file</span>
+                    </Button>
+                  </Label>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
     </>

@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
 }
 export async function PATCH(request: NextRequest) {
   const body = await request.json();
-
+  console.log(body);
   try {
     const card = await prisma.card.update({
       where: { id: body.id },

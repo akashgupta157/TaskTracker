@@ -10,12 +10,12 @@ export async function GET() {
     const boards = await prisma.board.findMany({
       where: {
         OR: [
-          { admin: session.user.id },
+          { adminId: session.user.id },
           { members: { some: { userId: session.user.id } } },
         ],
       },
       include: {
-        user: true,
+        admin: true,
         lists: {
           orderBy: { position: "asc" },
           include: {
@@ -38,6 +38,7 @@ export async function GET() {
     return NextResponse.json({ message }, { status: statusCode || 500 });
   }
 }
+
 export async function POST(request: NextRequest) {
   const session = (await getServerSession(authOptions)) as Session;
   const { title, description } = await request.json();
@@ -46,7 +47,7 @@ export async function POST(request: NextRequest) {
       data: {
         title,
         description: description || "",
-        admin: session.user.id,
+        adminId: session.user.id,
         background: "bg-gradient-to-br from-slate-800 to-sky-900",
         lists: {
           create: [
@@ -64,9 +65,21 @@ export async function POST(request: NextRequest) {
             },
           ],
         },
+        members: {
+          create: {
+            userId: session.user.id,
+            role: "ADMIN",
+          },
+        },
       },
       include: {
         lists: true,
+        admin: true,
+        members: {
+          include: {
+            user: true,
+          },
+        },
       },
     });
 
