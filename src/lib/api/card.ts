@@ -45,3 +45,12 @@ export const changeCardPosition = async (cardData: {
     throwSpecificError(handleApiError(error));
   }
 };
+
+export const removeCard = async (cardId: string) => {
+  try {
+    const { data } = await axios.delete(`/api/cards/${cardId}`);
+    return data;
+  } catch (error) {
+    throwSpecificError(handleApiError(error));
+  }
+};

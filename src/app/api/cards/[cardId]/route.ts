@@ -17,12 +17,21 @@ export async function PATCH(
     } = await request.json();
 
     if (toggleComplete) {
-      const updatedCard = await prisma.$executeRaw`
-        UPDATE "Card"
-        SET "isCompleted" = NOT "isCompleted"
-        WHERE id = ${cardId}
-        RETURNING *;
-      `;
+      const card = await prisma.card.findUnique({
+        where: { id: cardId },
+      });
+
+      if (!card) {
+        return NextResponse.json({ error: "Card not found" }, { status: 404 });
+      }
+
+      const updatedCard = await prisma.card.update({
+        where: { id: cardId },
+        data: {
+          isCompleted: !card.isCompleted,
+        },
+      });
+
       return NextResponse.json(updatedCard);
     }
 
@@ -107,4 +116,55 @@ async function normalizeListPositions(tx: PrismaClient, listId: string) {
       })
     )
   );
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ cardId: string }> }
+) {
+  try {
+    const { cardId } = await params;
+
+    const cardToDelete = await prisma.card.findUnique({
+      where: { id: cardId },
+      select: { listId: true, position: true },
+    });
+
+    if (!cardToDelete) {
+      return NextResponse.json({ message: "Card not found" }, { status: 404 });
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.card.delete({
+        where: { id: cardId },
+      });
+
+      await tx.card.updateMany({
+        where: {
+          listId: cardToDelete.listId,
+          position: {
+            gt: cardToDelete.position,
+          },
+        },
+        data: {
+          position: {
+            decrement: 1,
+          },
+        },
+      });
+
+      return { success: true };
+    });
+
+    return NextResponse.json(
+      {
+        message: "Card deleted successfully and positions updated",
+        deletedCardId: cardId,
+      },
+      { status: 200 }
+    );
+  } catch (error) {
+    const { message, statusCode } = handleApiError(error);
+    return NextResponse.json({ message }, { status: statusCode || 500 });
+  }
 }

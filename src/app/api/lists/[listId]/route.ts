@@ -24,7 +24,6 @@ export async function PATCH(
         data: { title },
       });
 
-      // If only title update was requested, return early
       if (newPosition === undefined) {
         return NextResponse.json(
           { message: "List title updated successfully", list: updatedList },
@@ -56,8 +55,7 @@ export async function PATCH(
       }
 
       const currentPosition = listToMove.position;
-      
-      // If position hasn't changed, no need to update
+
       if (currentPosition === newPosition) {
         return NextResponse.json(
           { message: "Position unchanged", updatedPosition: newPosition },
@@ -65,18 +63,14 @@ export async function PATCH(
         );
       }
 
-      // Create temporary positions to avoid unique constraint violations
-      const tempPosition = -1; // Use a temporary position outside normal range
+      const tempPosition = -1;
 
-      // First move the list to a temporary position
       await prisma.list.update({
         where: { id: listId },
         data: { position: tempPosition },
       });
 
-      // Update other lists' positions
       if (newPosition < currentPosition) {
-        // Moving up - increment positions of lists between newPosition and currentPosition
         await prisma.list.updateMany({
           where: {
             boardId,
@@ -90,7 +84,6 @@ export async function PATCH(
           },
         });
       } else {
-        // Moving down - decrement positions of lists between currentPosition and newPosition
         await prisma.list.updateMany({
           where: {
             boardId,
@@ -105,7 +98,6 @@ export async function PATCH(
         });
       }
 
-      // Finally, move the list to its new position
       await prisma.list.update({
         where: { id: listId },
         data: { position: newPosition },
@@ -117,6 +109,68 @@ export async function PATCH(
         message: "List updated successfully",
         ...(title !== undefined && { updatedTitle: title }),
         ...(newPosition !== undefined && { updatedPosition: newPosition }),
+      },
+      { status: 200 }
+    );
+  } catch (error) {
+    const { message, statusCode } = handleApiError(error);
+    return NextResponse.json({ message }, { status: statusCode || 500 });
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ listId: string }> }
+) {
+  try {
+    const { listId } = await params;
+
+    const listToDelete = await prisma.list.findUnique({
+      where: { id: listId },
+      include: {
+        cards: true,
+      },
+    });
+
+    if (!listToDelete) {
+      return NextResponse.json({ message: "List not found" }, { status: 404 });
+    }
+
+    const { boardId, position: deletedPosition } = listToDelete;
+
+    const result = await prisma.$transaction(async (tx) => {
+      if (listToDelete.cards.length > 0) {
+        await tx.card.deleteMany({
+          where: { listId },
+        });
+      }
+
+      await tx.list.delete({
+        where: { id: listId },
+      });
+
+      await tx.list.updateMany({
+        where: {
+          boardId,
+          position: {
+            gt: deletedPosition,
+          },
+        },
+        data: {
+          position: { decrement: 1 },
+        },
+      });
+
+      return {
+        deletedListId: listId,
+        deletedCardsCount: listToDelete.cards.length,
+      };
+    });
+
+    return NextResponse.json(
+      {
+        message: "List and all associated cards deleted successfully",
+        deletedListId: result.deletedListId,
       },
       { status: 200 }
     );

@@ -43,3 +43,12 @@ export const changeListTitle = async (listData: {
     throwSpecificError(handleApiError(error));
   }
 };
+
+export const removeList = async (listId: string) => {
+  try {
+    const { data } = await axios.delete(`/api/lists/${listId}`);
+    return data;
+  } catch (error) {
+    throwSpecificError(handleApiError(error));
+  }
+};

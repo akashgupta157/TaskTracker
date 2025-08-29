@@ -6,12 +6,14 @@ import {
   createNewList,
   changeListTitle,
   changeListPosition,
+  removeList,
 } from "@/lib/api/list";
 import {
   updateCard,
   createNewCard,
   changeCardPosition,
   toggleCardComplete,
+  removeCard,
 } from "@/lib/api/card";
 
 const initialState: BoardState = {
@@ -54,6 +56,32 @@ export const addNewList = createAsyncThunk(
   }
 );
 
+export const updateListPosition = createAsyncThunk(
+  "board/updateListPosition",
+  async (listData: {
+    boardId: string;
+    newPosition: number;
+    listId: string;
+  }) => {
+    return await changeListPosition(listData);
+  }
+);
+
+export const updateListTitle = createAsyncThunk(
+  "board/updateListName",
+  async (listData: { listId: string; title: string }) => {
+    return await changeListTitle(listData);
+  }
+);
+
+export const deleteList = createAsyncThunk(
+  "board/removeList",
+  async (listId: string) => {
+    const response = await removeList(listId);
+    return response.deletedListId || listId;
+  }
+);
+
 export const addNewCard = createAsyncThunk(
   "board/addNewCard",
   async (cardData: Card) => {
@@ -75,28 +103,18 @@ export const toggleCard = createAsyncThunk(
   }
 );
 
-export const updateListPosition = createAsyncThunk(
-  "board/updateListPosition",
-  async (listData: {
-    boardId: string;
-    newPosition: number;
-    listId: string;
-  }) => {
-    return await changeListPosition(listData);
-  }
-);
-
-export const updateListTitle = createAsyncThunk(
-  "board/updateListName",
-  async (listData: { listId: string; title: string }) => {
-    return await changeListTitle(listData);
-  }
-);
-
 export const updateCardPosition = createAsyncThunk(
   "board/updateCardPosition",
   async (cardData: { cardId: string; newPosition: number; listId: string }) => {
     return await changeCardPosition(cardData);
+  }
+);
+
+export const deleteCard = createAsyncThunk(
+  "board/deleteCard",
+  async (cardId: string) => {
+    const response = await removeCard(cardId);
+    return response.deletedCardId || cardId;
   }
 );
 
@@ -329,13 +347,27 @@ const boardSlice = createSlice({
           state.currentBoard &&
           action.payload.boardId === state.currentBoard.id
         ) {
-          state.currentBoard.lists.push(action.payload);
+          state.currentBoard.lists.push({ ...action.payload, cards: [] });
           normalizePositions(
             state.currentBoard.lists.map(
-              (l) => ({ ...l, position: l.position }) as unknown as Card
+              (l) => ({ ...l, position: l.position } as unknown as Card)
             )
           );
         }
+      })
+      .addCase(deleteList.fulfilled, (state, action) => {
+        const deletedListId = action.payload;
+        if (state.currentBoard) {
+          state.currentBoard.lists = state.currentBoard.lists.filter(
+            (list) => list.id !== deletedListId
+          );
+          state.currentBoard.lists.forEach((list, index) => {
+            list.position = index;
+          });
+        }
+      })
+      .addCase(deleteList.rejected, (state, action) => {
+        state.error = handleApiError(action.error);
       })
       .addCase(addNewCard.pending, (state) => {
         state.cardLoading = true;
@@ -407,6 +439,25 @@ const boardSlice = createSlice({
       })
       .addCase(reviseCard.rejected, (state, action) => {
         state.cardLoading = false;
+        state.error = handleApiError(action.error);
+      })
+      .addCase(deleteCard.fulfilled, (state, action: PayloadAction<string>) => {
+        if (!state.currentBoard) return;
+
+        const deletedCardId = action.payload;
+
+        state.currentBoard.lists.forEach((list) => {
+          const cardIndex = list.cards.findIndex(
+            (card) => card.id === deletedCardId
+          );
+          if (cardIndex !== -1) {
+            list.cards.splice(cardIndex, 1);
+
+            normalizePositions(list.cards);
+          }
+        });
+      })
+      .addCase(deleteCard.rejected, (state, action) => {
         state.error = handleApiError(action.error);
       });
   },

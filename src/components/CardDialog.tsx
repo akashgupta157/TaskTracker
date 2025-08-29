@@ -16,9 +16,9 @@ import { Separator } from "./ui/separator";
 import { uploadSupabase } from "@/lib/utils";
 import { AppDispatch, RootState } from "@/redux/store";
 import { DateTimePickerForm } from "./DateTimePickerForm";
-import { addNewCard, reviseCard } from "@/redux/slices/boardSlice";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+import { addNewCard, deleteCard, reviseCard } from "@/redux/slices/boardSlice";
 import {
   Select,
   SelectItem,
@@ -26,6 +26,17 @@ import {
   SelectContent,
   SelectTrigger,
 } from "./ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "./ui/alert-dialog";
 import {
   LuX,
   LuText,
@@ -39,6 +50,7 @@ import {
   LuChevronDown,
   LuCalendarRange,
   LuSquareCheckBig,
+  LuTrash2,
 } from "react-icons/lu";
 
 export default function CardDialog({
@@ -67,7 +79,7 @@ export default function CardDialog({
     priority: cardData?.priority || null,
     dueDate: cardData?.dueDate || null,
     isCompleted: cardData?.isCompleted || false,
-    position: cardData?.position || list.cards.length || 0,
+    position: cardData?.position || list.cards?.length || 0,
     checklist: cardData?.checklist || [],
     attachments: cardData?.attachments || [],
   });
@@ -174,7 +186,7 @@ export default function CardDialog({
 
     const newPosition =
       listId !== cardData?.listId
-        ? currentBoard?.lists.find((l) => l.id === listId)?.cards.length || 0
+        ? currentBoard?.lists.find((l) => l.id === listId)?.cards?.length || 0
         : cardData?.position;
 
     if (isNew) {
@@ -200,23 +212,63 @@ export default function CardDialog({
       setDialogOpen(false);
     }
   };
+
+  const handleDelete = async () => {
+    if (cardData) {
+      setDialogOpen(false);
+      await dispatch(deleteCard(cardData.id as string));
+    }
+  };
   return (
     <>
-      <Select
-        value={listId}
-        onValueChange={(value) => handleChange("listId", value)}
-      >
-        <SelectTrigger>
-          <SelectValue placeholder="Select a list" />
-        </SelectTrigger>
-        <SelectContent>
-          {currentBoard?.lists.map((e) => (
-            <SelectItem key={e.id} value={e.id}>
-              {e.title}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <div className="flex justify-between items-center">
+        <Select
+          value={listId}
+          onValueChange={(value) => handleChange("listId", value)}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Select a list" />
+          </SelectTrigger>
+          <SelectContent>
+            {currentBoard?.lists.map((e) => (
+              <SelectItem key={e.id} value={e.id}>
+                {e.title}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {!isNew && (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="outline"
+                className="mr-4 text-destructive hover:text-destructive/80"
+              >
+                <LuTrash2 /> Delete Card
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This action cannot be undone. This will permanently delete
+                  your card and remove your data from our servers.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-destructive hover:bg-destructive/80"
+                  onClick={handleDelete}
+                >
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
+      </div>
 
       <Separator className="my-1" />
 

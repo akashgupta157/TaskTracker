@@ -7,9 +7,13 @@ import { InlineEdit } from "./InlineEdit";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "@/redux/store";
 import React, { useMemo, useState } from "react";
-import { LuPlus, LuEllipsis, LuTrash2 } from "react-icons/lu";
+import { LuPlus, LuTrash2 } from "react-icons/lu";
 import { SortableContext, useSortable } from "@dnd-kit/sortable";
-import { modifyListTitle, updateListTitle } from "@/redux/slices/boardSlice";
+import {
+  deleteList,
+  modifyListTitle,
+  updateListTitle,
+} from "@/redux/slices/boardSlice";
 import {
   Dialog,
   DialogContent,
@@ -18,11 +22,17 @@ import {
   DialogTrigger,
 } from "./ui/dialog";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "./ui/dropdown-menu";
+  AlertDialog,
+  AlertDialogTitle,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTrigger,
+  AlertDialogDescription,
+} from "./ui/alert-dialog";
+import { toast } from "sonner";
 
 export default function List({ list }: { list: List }) {
   const dispatch = useDispatch<AppDispatch>();
@@ -52,7 +62,15 @@ export default function List({ list }: { list: List }) {
     dispatch(modifyListTitle({ listId: list.id, title: listTitle }));
     dispatch(updateListTitle({ listId: list.id, title: listTitle }));
   };
-  const handleDeleteList = () => {};
+  const handleDelete = async () => {
+    try {
+      const toastId = toast.loading("Deleting list...");
+      await dispatch(deleteList(list.id as string));
+      toast.success("List deleted successfully!", { id: toastId });
+    } catch (error) {
+      toast.error("Failed to delete list.");
+    }
+  };
   return (
     <div
       ref={setNodeRef}
@@ -74,22 +92,31 @@ export default function List({ list }: { list: List }) {
           onCommit={handleTitleChange}
           className="px-2 font-bold cursor-pointer"
         />
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="w-8 h-8">
-              <LuEllipsis className="size-4" />
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button size="icon" variant="ghost">
+              <LuTrash2 className="text-destructive" />
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem
-              onSelect={handleDeleteList}
-              className="text-red-600 focus:text-red-600 dark:focus:text-red-400 dark:text-red-400 cursor-pointer"
-            >
-              <LuTrash2 className="text-red-600 dark:text-red-400" /> Delete
-              list
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete this
+                list and cards within it from your board.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive hover:bg-destructive/80"
+                onClick={handleDelete}
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
 
       <div className="flex-1 space-y-3 my-2 overflow-hidden overflow-y-auto">

@@ -4,7 +4,6 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-
   try {
     const card = await prisma.card.create({
       data: body,
@@ -17,7 +16,6 @@ export async function POST(request: NextRequest) {
 }
 export async function PATCH(request: NextRequest) {
   const body = await request.json();
-  console.log(body);
   try {
     const card = await prisma.card.update({
       where: { id: body.id },

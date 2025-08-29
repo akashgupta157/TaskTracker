@@ -1,11 +1,11 @@
 "use client";
 import { z } from "zod";
-import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import React, { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AppDispatch, RootState } from "@/redux/store";
@@ -26,6 +26,7 @@ type BoardFormData = z.infer<typeof boardSchema>;
 
 export default function Dashboard() {
   const router = useRouter();
+  const [open, setOpen] = useState(false);
   const dispatch = useDispatch<AppDispatch>();
   const { boards, loading } = useSelector((state: RootState) => state.board);
   const {
@@ -45,6 +46,7 @@ export default function Dashboard() {
     const { payload: id } = await dispatch(addNewBoard(data));
     router.push(`/board/${id.id}`);
     reset();
+    setOpen(false);
   };
 
   return (
@@ -52,7 +54,7 @@ export default function Dashboard() {
       <h1 className="font-bold text-4xl">Your Boards</h1>
 
       <div className="gap-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-        <Popover>
+        <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
             <button className="flex justify-center items-center bg-foreground/10 hover:bg-foreground/20 rounded-xl w-full h-32 cursor-pointer">
               Create New Board
