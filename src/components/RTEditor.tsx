@@ -63,7 +63,7 @@ export default function RTEditor({ value, onChange }: RTEditorProps) {
     editorProps: {
       attributes: {
         class:
-          "rounded-md border h-[200px] border-input bg-background focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 p-2 overflow-y-auto",
+          "rounded-md border min-h-[200px] sm:h-[200px] border-input bg-background focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 p-2 overflow-y-auto",
       },
     },
   });
@@ -164,18 +164,18 @@ function MenuBarInner({ editor }: { editor: Editor }) {
   };
 
   return (
-    <div className="flex items-center px-2 py-1.5 border rounded-md">
+    <div className="flex flex-wrap items-center gap-1 sm:gap-0 px-2 py-1.5 border rounded-md">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
-            className="gap-0 px-6"
+            className="gap-0 px-3 sm:px-6"
             size="icon"
             variant="ghost"
             aria-label="Text formatting options"
             aria-haspopup="menu"
           >
-            <LuCaseSensitive className="size-6" />
-            <LuChevronDown />
+            <LuCaseSensitive className="size-5 sm:size-6" />
+            <LuChevronDown className="size-3 sm:size-4" />
             {activeLevel && (
               <span className="sr-only">Heading {activeLevel} selected</span>
             )}
@@ -184,24 +184,23 @@ function MenuBarInner({ editor }: { editor: Editor }) {
         <DropdownMenuContent
           align="start"
           onCloseAutoFocus={(e) => e.preventDefault()}
+          className="w-[200px] sm:w-auto"
         >
           <DropdownMenuItem
             onClick={handleParagraphChange}
             aria-selected={editorState.isParagraph}
-            className={`${
-              editorState.isParagraph ? "bg-accent" : ""
-            } focus:bg-accent`}
+            className={`${editorState.isParagraph ? "bg-accent" : ""
+              } focus:bg-accent`}
           >
             <span className={styles.normalText}>Normal Text</span>
           </DropdownMenuItem>
           {[1, 2, 3, 4, 5, 6].map((level) => (
             <DropdownMenuItem
               key={level}
-              className={`${
-                editorState[`isHeading${level}` as keyof typeof editorState]
-                  ? "bg-accent"
-                  : ""
-              } focus:bg-accent`}
+              className={`${editorState[`isHeading${level}` as keyof typeof editorState]
+                ? "bg-accent"
+                : ""
+                } focus:bg-accent`}
               onClick={() =>
                 handleHeadingChange(level as 1 | 2 | 3 | 4 | 5 | 6)
               }
@@ -217,166 +216,178 @@ function MenuBarInner({ editor }: { editor: Editor }) {
 
       <Separator
         orientation="vertical"
-        className="mx-2 data-[orientation=vertical]:h-8.5"
+        className="mx-1 sm:mx-2 data-[orientation=vertical]:h-6 sm:data-[orientation=vertical]:h-8.5"
       />
 
-      <Button
-        size="icon"
-        variant={editorState.isBold ? "secondary" : "ghost"}
-        onClick={() => editor.chain().focus().toggleBold().run()}
-        disabled={!editorState.canBold}
-        aria-label="Bold"
-      >
-        <LuBold className="w-4 h-4" />
-      </Button>
-
-      <Button
-        size="icon"
-        variant={editorState.isItalic ? "secondary" : "ghost"}
-        onClick={() => editor.chain().focus().toggleItalic().run()}
-        disabled={!editorState.canItalic}
-        aria-label="Italic"
-      >
-        <LuItalic className="w-4 h-4" />
-      </Button>
-
-      <Button
-        size="icon"
-        variant={editorState.isUnderline ? "secondary" : "ghost"}
-        onClick={() => editor.chain().focus().toggleUnderline().run()}
-        disabled={!editorState.canUnderline}
-        aria-label="Underline"
-      >
-        <LuUnderline className="w-4 h-4" />
-      </Button>
-
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            size="icon"
-            variant="ghost"
-            aria-label="More formatting options"
-          >
-            <LuEllipsis className="w-4 h-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent
-          align="start"
-          onCloseAutoFocus={(e) => e.preventDefault()}
+      <div className="flex items-center gap-1 sm:gap-0">
+        <Button
+          size="icon"
+          variant={editorState.isBold ? "secondary" : "ghost"}
+          onClick={() => editor.chain().focus().toggleBold().run()}
+          disabled={!editorState.canBold}
+          aria-label="Bold"
+          className="w-8 sm:w-10 h-8 sm:h-10"
         >
-          <DropdownMenuItem
-            onClick={() => editor.chain().focus().toggleStrike().run()}
-            disabled={!editorState.canStrike}
-            className={`${
-              editorState.isStrike ? "bg-accent" : ""
-            } focus:bg-accent`}
-          >
-            <span className="flex items-center gap-2">
-              <LuStrikethrough className="w-4 h-4" />
-              Strikethrough
-            </span>
-          </DropdownMenuItem>
+          <LuBold className="w-3 sm:w-4 h-3 sm:h-4" />
+        </Button>
 
-          <DropdownMenuItem
-            onClick={() => editor.chain().focus().toggleCode().run()}
-            disabled={!editorState.canCode}
-            className={`${
-              editorState.isCode ? "bg-accent" : ""
-            } focus:bg-accent`}
+        <Button
+          size="icon"
+          variant={editorState.isItalic ? "secondary" : "ghost"}
+          onClick={() => editor.chain().focus().toggleItalic().run()}
+          disabled={!editorState.canItalic}
+          aria-label="Italic"
+          className="w-8 sm:w-10 h-8 sm:h-10"
+        >
+          <LuItalic className="w-3 sm:w-4 h-3 sm:h-4" />
+        </Button>
+
+        <Button
+          size="icon"
+          variant={editorState.isUnderline ? "secondary" : "ghost"}
+          onClick={() => editor.chain().focus().toggleUnderline().run()}
+          disabled={!editorState.canUnderline}
+          aria-label="Underline"
+          className="w-8 sm:w-10 h-8 sm:h-10"
+        >
+          <LuUnderline className="w-3 sm:w-4 h-3 sm:h-4" />
+        </Button>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              size="icon"
+              variant="ghost"
+              aria-label="More formatting options"
+              className="w-8 sm:w-10 h-8 sm:h-10"
+            >
+              <LuEllipsis className="w-3 sm:w-4 h-3 sm:h-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align="start"
+            onCloseAutoFocus={(e) => e.preventDefault()}
+            className="w-[200px] sm:w-auto"
           >
-            <span className="flex items-center gap-2">
-              <LuCode className="w-4 h-4" />
-              Code
-            </span>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+            <DropdownMenuItem
+              onClick={() => editor.chain().focus().toggleStrike().run()}
+              disabled={!editorState.canStrike}
+              className={`${editorState.isStrike ? "bg-accent" : ""
+                } focus:bg-accent`}
+            >
+              <span className="flex items-center gap-2">
+                <LuStrikethrough className="w-4 h-4" />
+                Strikethrough
+              </span>
+            </DropdownMenuItem>
+
+            <DropdownMenuItem
+              onClick={() => editor.chain().focus().toggleCode().run()}
+              disabled={!editorState.canCode}
+              className={`${editorState.isCode ? "bg-accent" : ""
+                } focus:bg-accent`}
+            >
+              <span className="flex items-center gap-2">
+                <LuCode className="w-4 h-4" />
+                Code
+              </span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
 
       <Separator
         orientation="vertical"
-        className="mx-2 data-[orientation=vertical]:h-8.5"
+        className="mx-1 sm:mx-2 data-[orientation=vertical]:h-6 sm:data-[orientation=vertical]:h-8.5"
       />
 
-      <Button
-        size="icon"
-        variant={editorState.isBulletList ? "secondary" : "ghost"}
-        onClick={() => editor.chain().focus().toggleBulletList().run()}
-        aria-label="Bullet list"
-      >
-        <LuList className="w-4 h-4" />
-      </Button>
+      <div className="flex items-center gap-1 sm:gap-0">
+        <Button
+          size="icon"
+          variant={editorState.isBulletList ? "secondary" : "ghost"}
+          onClick={() => editor.chain().focus().toggleBulletList().run()}
+          aria-label="Bullet list"
+          className="w-8 sm:w-10 h-8 sm:h-10"
+        >
+          <LuList className="w-3 sm:w-4 h-3 sm:h-4" />
+        </Button>
 
-      <Button
-        size="icon"
-        variant={editorState.isOrderedList ? "secondary" : "ghost"}
-        onClick={() => editor.chain().focus().toggleOrderedList().run()}
-        aria-label="Numbered list"
-      >
-        <LuListOrdered className="w-4 h-4" />
-      </Button>
+        <Button
+          size="icon"
+          variant={editorState.isOrderedList ? "secondary" : "ghost"}
+          onClick={() => editor.chain().focus().toggleOrderedList().run()}
+          aria-label="Numbered list"
+          className="w-8 sm:w-10 h-8 sm:h-10"
+        >
+          <LuListOrdered className="w-3 sm:w-4 h-3 sm:h-4" />
+        </Button>
+      </div>
 
       <Separator
         orientation="vertical"
-        className="mx-2 data-[orientation=vertical]:h-8.5"
+        className="mx-1 sm:mx-2 data-[orientation=vertical]:h-6 sm:data-[orientation=vertical]:h-8.5"
       />
 
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            size="icon"
-            variant={editorState.isLink ? "secondary" : "ghost"}
-            aria-label="Insert link"
-          >
-            <LuLink className="w-4 h-4" />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent>
-          <div className="flex flex-col space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="link-url">URL</Label>
-              <Input
-                id="link-url"
-                placeholder="https://example.com"
-                value={linkUrl}
-                onChange={(e) => {
-                  setLinkUrl(e.target.value);
-                  validateUrl(e.target.value);
-                }}
-                onKeyDown={(e) => e.key === "Enter" && setLink()}
-                className={!isUrlValid && linkUrl ? "border-red-500" : ""}
-              />
-              {!isUrlValid && linkUrl && (
-                <p className="mt-1 text-red-500 text-sm">
-                  Please enter a valid URL
-                </p>
-              )}
-            </div>
+      <div className="flex items-center gap-1 sm:gap-0">
+        <Popover open={open} onOpenChange={setOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              size="icon"
+              variant={editorState.isLink ? "secondary" : "ghost"}
+              aria-label="Insert link"
+              className="w-8 sm:w-10 h-8 sm:h-10"
+            >
+              <LuLink className="w-3 sm:w-4 h-3 sm:h-4" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[90vw] sm:w-auto">
+            <div className="flex flex-col space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="link-url">URL</Label>
+                <Input
+                  id="link-url"
+                  placeholder="https://example.com"
+                  value={linkUrl}
+                  onChange={(e) => {
+                    setLinkUrl(e.target.value);
+                    validateUrl(e.target.value);
+                  }}
+                  onKeyDown={(e) => e.key === "Enter" && setLink()}
+                  className={!isUrlValid && linkUrl ? "border-red-500" : ""}
+                />
+                {!isUrlValid && linkUrl && (
+                  <p className="mt-1 text-red-500 text-sm">
+                    Please enter a valid URL
+                  </p>
+                )}
+              </div>
 
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="open-new-tab"
-                checked={openInNewTab}
-                onCheckedChange={setOpenInNewTab}
-              />
-              <Label htmlFor="open-new-tab">Open in new tab</Label>
-            </div>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="open-new-tab"
+                  checked={openInNewTab}
+                  onCheckedChange={setOpenInNewTab}
+                />
+                <Label htmlFor="open-new-tab">Open in new tab</Label>
+              </div>
 
-            <div className="flex justify-end space-x-2">
-              <Button variant="outline" onClick={() => setOpen(false)}>
-                Cancel
-              </Button>
-              <Button
-                onClick={setLink}
-                disabled={!isUrlValid && linkUrl !== ""}
-              >
-                Apply
-              </Button>
+              <div className="flex justify-end space-x-2">
+                <Button variant="outline" onClick={() => setOpen(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  onClick={setLink}
+                  disabled={!isUrlValid && linkUrl !== ""}
+                >
+                  Apply
+                </Button>
+              </div>
             </div>
-          </div>
-        </PopoverContent>
-      </Popover>
+          </PopoverContent>
+        </Popover>
 
-      <ImageUpload editor={editor} />
+        <ImageUpload editor={editor} />
+      </div>
     </div>
   );
 }
@@ -415,11 +426,16 @@ function ImageUpload({ editor }: { editor: Editor }) {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button size="icon" variant="ghost" aria-label="Insert image">
-          <LuImage className="w-4 h-4" />
+        <Button
+          size="icon"
+          variant="ghost"
+          aria-label="Insert image"
+          className="w-8 sm:w-10 h-8 sm:h-10"
+        >
+          <LuImage className="w-3 sm:w-4 h-3 sm:h-4" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="p-4 w-80" align="start">
+      <PopoverContent className="p-4 w-[90vw] sm:w-80" align="start">
         <div className="space-y-4">
           <div className="space-y-2">
             <Label>Image URL</Label>

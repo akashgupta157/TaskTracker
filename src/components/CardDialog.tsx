@@ -7,13 +7,13 @@ import { Loading } from "./Loading";
 import { Card, List } from "@/types";
 import { Button } from "./ui/button";
 import { formatDate } from "date-fns";
-import React, { useState } from "react";
 import { Checkbox } from "./ui/checkbox";
 import { useSelector } from "react-redux";
 import { useDispatch } from "react-redux";
 import { InlineEdit } from "./InlineEdit";
 import { Separator } from "./ui/separator";
 import { uploadSupabase } from "@/lib/utils";
+import React, { useState, useCallback } from "react";
 import { AppDispatch, RootState } from "@/redux/store";
 import { DateTimePickerForm } from "./DateTimePickerForm";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
@@ -43,6 +43,7 @@ import {
   LuCheck,
   LuSearch,
   LuCircle,
+  LuTrash2,
   LuCaptions,
   LuPaperclip,
   LuUsersRound,
@@ -50,8 +51,11 @@ import {
   LuChevronDown,
   LuCalendarRange,
   LuSquareCheckBig,
-  LuTrash2,
 } from "react-icons/lu";
+
+// Generate a more reliable ID
+const generateId = () =>
+  `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
 export default function CardDialog({
   list,
@@ -65,10 +69,10 @@ export default function CardDialog({
   setDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
   const dispatch = useDispatch<AppDispatch>();
-
   const { currentBoard, cardLoading } = useSelector(
     (state: RootState) => state.board
   );
+
   const [open, setOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
@@ -83,147 +87,157 @@ export default function CardDialog({
     checklist: cardData?.checklist || [],
     attachments: cardData?.attachments || [],
   });
-  const {
-    title,
-    description,
-    listId,
-    priority,
-    dueDate,
-    isCompleted,
-    attachments,
-  } = cardDetails;
 
-  const handleChange = <T extends keyof typeof cardDetails>(
-    field: T,
-    value: (typeof cardDetails)[T] | string | null
-  ) => {
-    setCardDetails({ ...cardDetails, [field]: value });
-  };
+  const handleChange = useCallback(
+    <T extends keyof typeof cardDetails>(
+      field: T,
+      value: (typeof cardDetails)[T] | string | null
+    ) => {
+      setCardDetails((prev) => ({ ...prev, [field]: value }));
+    },
+    []
+  );
 
-  const handleDateSubmit = (date: Date) => {
-    handleChange("dueDate", date.toISOString());
-    setOpen(false);
-  };
+  const handleDateSubmit = useCallback(
+    (date: Date) => {
+      handleChange("dueDate", date.toISOString());
+      setOpen(false);
+    },
+    [handleChange]
+  );
 
-  const handleAddChecklist = () => {
-    const newChecklist = [
-      ...cardDetails.checklist,
-      {
-        id: Math.random().toString(36).substring(2, 9),
-        title: "",
-        isChecked: false,
-      },
-    ];
-    setCardDetails({ ...cardDetails, checklist: newChecklist });
-  };
-
-  const handleChecklistChange = (
-    id: string,
-    field: "isChecked" | "title",
-    value: string | boolean
-  ) => {
-    const updatedChecklist = cardDetails.checklist.map((item) =>
-      item.id === id ? { ...item, [field]: value } : item
-    );
-    setCardDetails({ ...cardDetails, checklist: updatedChecklist });
-  };
-
-  const handleRemoveChecklistItem = (id: string) => {
-    const filteredChecklist = cardDetails.checklist.filter(
-      (item) => item.id !== id
-    );
-    setCardDetails({ ...cardDetails, checklist: filteredChecklist });
-  };
-
-  const handleAttachmentUpload = async (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    event.target.value = "";
-
-    setIsUploading(true);
-    const toastId = toast.loading(`Uploading ${file.name}...`);
-
-    try {
-      const result = await uploadSupabase(file);
-      const newAttachment = {
-        name: file.name,
-        url: result,
-      };
-      const newAttachments = [...cardDetails.attachments, newAttachment];
-      setCardDetails({ ...cardDetails, attachments: newAttachments });
-
-      toast.success(`File uploaded successfully!`, { id: toastId });
-    } catch (error) {
-      console.error("Upload error:", error);
-      toast.error(
-        `Failed to upload file: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }`,
+  const handleAddChecklist = useCallback(() => {
+    setCardDetails((prev) => ({
+      ...prev,
+      checklist: [
+        ...prev.checklist,
         {
-          id: toastId,
-        }
-      );
-    } finally {
-      setIsUploading(false);
+          id: generateId(),
+          title: "",
+          isChecked: false,
+        },
+      ],
+    }));
+  }, []);
+
+  const handleChecklistChange = useCallback(
+    (id: string, field: "isChecked" | "title", value: string | boolean) => {
+      setCardDetails((prev) => ({
+        ...prev,
+        checklist: prev.checklist.map((item) =>
+          item.id === id ? { ...item, [field]: value } : item
+        ),
+      }));
+    },
+    []
+  );
+
+  const handleRemoveChecklistItem = useCallback((id: string) => {
+    setCardDetails((prev) => ({
+      ...prev,
+      checklist: prev.checklist.filter((item) => item.id !== id),
+    }));
+  }, []);
+
+  const handleAttachmentUpload = useCallback(
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (!file) return;
+
+      event.target.value = "";
+      setIsUploading(true);
+
+      const toastId = toast.loading(`Uploading ${file.name}...`);
+
+      try {
+        const result = await uploadSupabase(file);
+        setCardDetails((prev) => ({
+          ...prev,
+          attachments: [...prev.attachments, { name: file.name, url: result }],
+        }));
+
+        toast.success(`File uploaded successfully!`, { id: toastId });
+      } catch (error) {
+        console.error("Upload error:", error);
+        toast.error(
+          `Failed to upload file: ${error instanceof Error ? error.message : "Unknown error"
+          }`,
+          { id: toastId }
+        );
+      } finally {
+        setIsUploading(false);
+      }
+    },
+    []
+  );
+
+  const handleRemoveAttachment = useCallback((index: number) => {
+    setCardDetails((prev) => ({
+      ...prev,
+      attachments: prev.attachments.filter((_, i) => i !== index),
+    }));
+  }, []);
+
+  const handleSubmit = useCallback(async () => {
+    if (!cardDetails.title.trim()) {
+      toast.error("Card title is required");
+      return;
     }
-  };
 
-  const handleRemoveAttachment = (index: number) => {
-    const newAttachments = [...cardDetails.attachments];
-    newAttachments.splice(index, 1);
-    setCardDetails({ ...cardDetails, attachments: newAttachments });
-  };
-
-  const handleSubmit = async () => {
-    const filteredCard = Object.fromEntries(
-      Object.entries({
-        ...cardDetails,
-      }).filter(([_, value]) => value !== null)
-    ) as unknown as Card;
+    const cleanCard = Object.fromEntries(
+      Object.entries(cardDetails).filter(
+        ([_, value]) => value !== null && value !== undefined
+      )
+    ) as Card;
 
     const newPosition =
-      listId !== cardData?.listId
-        ? currentBoard?.lists.find((l) => l.id === listId)?.cards?.length || 0
+      cardDetails.listId !== cardData?.listId
+        ? currentBoard?.lists.find((l) => l.id === cardDetails.listId)?.cards
+          ?.length || 0
         : cardData?.position;
 
-    if (isNew) {
-      await dispatch(
-        addNewCard({
-          ...filteredCard,
-          position: newPosition,
-        })
-      );
+    try {
+      if (isNew) {
+        await dispatch(
+          addNewCard({
+            ...cleanCard,
+            position: newPosition,
+          })
+        );
+        toast.success("Card created successfully");
+      } else {
+        await dispatch(
+          reviseCard({
+            ...cardData,
+            ...cleanCard,
+            position: newPosition,
+          })
+        );
+        toast.success("Card updated successfully");
+      }
       setDialogOpen(false);
-    } else {
-      await dispatch(
-        reviseCard({
-          ...cardData,
-          ...filteredCard,
-          position: newPosition,
-          listId,
-          dueDate,
-          priority,
-          isCompleted,
-        })
-      );
-      setDialogOpen(false);
+    } catch (error) {
+      toast.error("Failed to save card");
     }
-  };
+  }, [cardDetails, cardData, currentBoard, isNew, dispatch, setDialogOpen]);
 
-  const handleDelete = async () => {
-    if (cardData) {
+  const handleDelete = useCallback(async () => {
+    if (!cardData) return;
+
+    try {
       setDialogOpen(false);
       await dispatch(deleteCard(cardData.id as string));
+      toast.success("Card deleted successfully");
+    } catch (error) {
+      toast.error("Failed to delete card");
     }
-  };
+  }, [cardData, dispatch, setDialogOpen]);
+
   return (
     <>
       <div className="flex justify-between items-center">
         <Select
-          value={listId}
+          value={cardDetails.listId}
           onValueChange={(value) => handleChange("listId", value)}
         >
           <SelectTrigger>
@@ -243,9 +257,9 @@ export default function CardDialog({
             <AlertDialogTrigger asChild>
               <Button
                 variant="outline"
-                className="mr-4 text-destructive hover:text-destructive/80"
+                className="mr-2 sm:mr-4 text-destructive hover:text-destructive/80"
               >
-                <LuTrash2 /> Delete Card
+                <LuTrash2 /> <p className="hidden sm:inline">Delete Card</p>
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
@@ -272,12 +286,12 @@ export default function CardDialog({
 
       <Separator className="my-1" />
 
-      <div className="flex gap-4">
-        <div className="flex-1 max-h-[calc(100vh-160px)] overflow-y-auto">
-          <div className="flex items-center gap-2 mb-4">
+      <div className="flex lg:flex-row flex-col gap-4">
+        <div className="flex-1 space-y-5 max-h-[calc(100vh-200px)] overflow-y-auto">
+          <div className="flex items-center gap-2">
             <Tooltip>
               <TooltipTrigger asChild>
-                {isCompleted ? (
+                {cardDetails.isCompleted ? (
                   <div
                     className="relative cursor-pointer"
                     onClick={() => handleChange("isCompleted", false)}
@@ -299,275 +313,397 @@ export default function CardDialog({
                 )}
               </TooltipTrigger>
               <TooltipContent>
-                <p>{isCompleted ? "Mark incomplete" : "Mark completed"}</p>
+                <p>
+                  {cardDetails.isCompleted
+                    ? "Mark incomplete"
+                    : "Mark completed"}
+                </p>
               </TooltipContent>
             </Tooltip>
 
             <LuCaptions className="size-6" />
             <InlineEdit
-              value={title}
+              value={cardDetails.title}
               onChange={(value) => handleChange("title", value)}
-              className="font-medium text-2xl"
+              className="font-medium text-xl sm:text-2xl"
+            />
+          </div>
+          <div className="md:hidden">
+            <SidebarActions
+              priority={cardDetails.priority}
+              dueDate={cardDetails.dueDate}
+              onPriorityChange={(value) => handleChange("priority", value)}
+              onDueDateChange={handleDateSubmit}
+              onAddChecklist={handleAddChecklist}
+              onAttachmentUpload={handleAttachmentUpload}
+              isUploading={isUploading}
             />
           </div>
 
-          <div className="space-y-2 mb-4">
+          <div className="space-y-2">
             <div className="flex items-center gap-2">
               <LuText className="size-5" />
               <span className="font-semibold">Description</span>
             </div>
             <RTEditor
-              value={description}
+              value={cardDetails.description}
               onChange={(value) => handleChange("description", value)}
             />
           </div>
 
-          {priority && (
-            <div className="flex justify-between items-center">
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-2">
-                  <LuArrowUpDown className="size-5" />
-                  <span className="font-semibold">Priority:</span>
+          <div className="gap-3 grid grid-cols-1 md:grid-cols-2">
+            {cardDetails.priority && (
+              <div className="bg-muted/30 p-3 rounded-lg">
+                <div className="flex justify-between items-start">
+                  <div className="flex items-center gap-2">
+                    <div className={`p-2 rounded-full ${cardDetails.priority === "HIGH" ? "bg-red-100 text-red-600" : cardDetails.priority === "MEDIUM" ? "bg-yellow-100 text-yellow-600" : "bg-green-100 text-green-600"}`}>
+                      <LuArrowUpDown className="size-4" />
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground text-sm">Priority</p>
+                      <p className={`font-semibold ${cardDetails.priority === "HIGH" ? "text-red-600" : cardDetails.priority === "MEDIUM" ? "text-yellow-600" : "text-green-600"}`}>
+                        {cardDetails.priority}
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleChange("priority", null)}
+                    className="w-7 h-7 text-muted-foreground hover:text-destructive"
+                  >
+                    <LuX className="size-3.5" />
+                  </Button>
                 </div>
-                <p
-                  className={`font-bold ${
-                    priority === "HIGH"
-                      ? "text-red-500"
-                      : priority === "MEDIUM"
-                      ? "text-yellow-500"
-                      : "text-green-500"
-                  }`}
-                >
-                  {priority}
-                </p>
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => handleChange("priority", null)}
-                className="text-muted-foreground hover:text-destructive"
-              >
-                <LuX className="size-5" />
-              </Button>
-            </div>
-          )}
-
-          {dueDate && (
-            <div className="flex justify-between items-center">
-              <div className="flex items-center gap-2">
-                <LuCalendarRange className="size-5" />
-                <span className="font-semibold">Due Date:</span>
-                <p className="font-semibold">
-                  {formatDate(dueDate, "dd/MM/yyyy hh:mm a")}
-                </p>
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => handleChange("dueDate", null)}
-                className="text-muted-foreground hover:text-destructive"
-              >
-                <LuX className="size-5" />
-              </Button>
-            </div>
-          )}
-
-          <div className="space-y-2 my-2">
-            {cardDetails.checklist.length > 0 && (
-              <div className="flex items-center gap-2 mb-2">
-                <LuSquareCheckBig className="size-5" />
-                <span className="font-semibold">Checklist</span>
               </div>
             )}
 
-            {cardDetails.checklist.map((item) => (
-              <div key={item.id} className="group flex items-center gap-2">
-                <Checkbox
-                  checked={item.isChecked}
-                  onCheckedChange={(checked) =>
-                    handleChecklistChange(
-                      item.id,
-                      "isChecked",
-                      checked as boolean
-                    )
-                  }
-                  className="rounded-md w-5 h-5"
-                />
-                <InlineEdit
-                  value={item.title}
-                  onChange={(value) =>
-                    handleChecklistChange(item.id, "title", value)
-                  }
-                  className={`flex-1 ${
-                    item.isChecked ? "line-through text-muted-foreground" : ""
-                  }`}
-                />
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="opacity-0 group-hover:opacity-100 w-6 h-6"
-                  onClick={() => handleRemoveChecklistItem(item.id)}
-                >
-                  <LuX className="size-4" />
-                </Button>
-              </div>
-            ))}
-          </div>
-
-          {attachments && attachments.length > 0 && (
-            <div className="space-y-2 my-2">
-              <div className="flex items-center gap-2 mb-2">
-                <LuPaperclip className="size-5" />
-                <span className="font-semibold">Attachments</span>
-              </div>
-              <div className="space-y-3 p-2">
-                {attachments.map((attachment, index) => (
-                  <div
-                    key={index}
-                    className="group flex justify-between items-center gap-2 cursor-pointer"
-                  >
-                    <div
-                      className="flex items-center gap-2"
-                      onClick={() => {
-                        window.open(attachment.url, "_blank");
-                      }}
-                    >
-                      <div className="flex justify-center items-center bg-muted-foreground px-1 rounded-md min-w-10 h-10">
-                        <p className="font-semibold uppercase">
-                          {attachment.name.split(".")[1]}
-                        </p>
-                      </div>
-                      <span className="font-semibold text-sm">
-                        {attachment.name}
-                      </span>
+            {cardDetails.dueDate && (
+              <div className="bg-muted/30 p-3 rounded-lg">
+                <div className="flex justify-between items-start">
+                  <div className="flex items-start gap-2">
+                    <div className="bg-blue-100 mt-1.5 p-2 rounded-full text-blue-600">
+                      <LuCalendarRange className="size-4" />
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="opacity-0 group-hover:opacity-100 w-6 h-6"
-                      onClick={() => handleRemoveAttachment(index)}
-                    >
-                      <LuX className="size-4" />
-                    </Button>
+                    <div>
+                      <p className="text-muted-foreground text-sm">Due Date</p>
+                      <p className="font-semibold">
+                        {formatDate(cardDetails.dueDate, "dd/MM/yyyy")}
+                      </p>
+                      <p className="text-muted-foreground text-xs">
+                        {formatDate(cardDetails.dueDate, "hh:mm a")}
+                      </p>
+                    </div>
                   </div>
-                ))}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleChange("dueDate", null)}
+                    className="w-7 h-7 text-muted-foreground hover:text-destructive"
+                  >
+                    <LuX className="size-3.5" />
+                  </Button>
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          <Button
-            disabled={!title.trim() || cardLoading}
-            onClick={handleSubmit}
-            className="mt-4"
-          >
-            {cardLoading ? <Loading /> : isNew ? "Create Card" : "Update Card"}
-          </Button>
-        </div>
-
-        <div className="space-y-4">
-          <Select
-            value={priority || ""}
-            onValueChange={(value) => handleChange("priority", value)}
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue
-                placeholder={
+            {cardDetails.checklist.length > 0 && (
+              <div className="md:col-span-2 bg-muted/30 p-3 rounded-lg">
+                <div className="flex justify-between items-center mb-3">
                   <div className="flex items-center gap-2">
-                    <LuArrowUpDown className="size-4" />
-                    <span>Select Priority</span>
+                    <div className="bg-purple-100 p-2 rounded-full text-purple-600">
+                      <LuSquareCheckBig className="size-4" />
+                    </div>
+                    <div>
+                      <p className="font-semibold">Checklist</p>
+                      <p className="text-muted-foreground text-sm">
+                        {cardDetails.checklist.filter(item => item.isChecked).length} of {cardDetails.checklist.length} completed
+                      </p>
+                    </div>
                   </div>
-                }
-              />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="HIGH">
-                <div className="flex items-center gap-2">
-                  <span className="bg-red-500 w-10 h-3" />
-                  <span>High</span>
-                </div>
-              </SelectItem>
-              <SelectItem value="MEDIUM">
-                <div className="flex items-center gap-2">
-                  <span className="bg-yellow-500 w-10 h-3" />
-                  <span>Medium</span>
-                </div>
-              </SelectItem>
-              <SelectItem value="LOW">
-                <div className="flex items-center gap-2">
-                  <span className="bg-green-500 w-10 h-3" />
-                  <span>Low</span>
-                </div>
-              </SelectItem>
-            </SelectContent>
-          </Select>
 
-          <Popover open={open} onOpenChange={setOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className="flex justify-between w-full font-normal text-muted-foreground hover:text-muted-foreground"
-              >
-                <div className="flex items-center gap-2">
-                  <LuCalendarRange className="size-4" />
-                  <span>Set Due Date</span>
+                  <div className="md:hidden bg-gray-200 rounded-full w-24 h-2 overflow-hidden">
+                    <div
+                      className="bg-green-500 h-full transition-all duration-300"
+                      style={{ width: `${(cardDetails.checklist.filter(item => item.isChecked).length / cardDetails.checklist.length) * 100}%` }}
+                    ></div>
+                  </div>
                 </div>
-                <LuChevronDown className="opacity-50 size-4" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="">
-              <DateTimePickerForm
-                onSubmit={(data) => {
-                  handleDateSubmit(data.time);
-                }}
-                initialDate={dueDate ? new Date(dueDate) : undefined}
-              />
-            </PopoverContent>
-          </Popover>
 
-          <Button
-            variant="outline"
-            className="flex justify-start items-center w-full font-normal text-muted-foreground hover:text-muted-foreground"
-            onClick={handleAddChecklist}
-          >
-            <LuSquareCheckBig className="size-4" />
-            <span>Add Checklist</span>
-          </Button>
+                <div className="hidden md:block bg-gray-200 mb-3 rounded-full w-full h-2 overflow-hidden">
+                  <div
+                    className="bg-green-500 h-full transition-all duration-300"
+                    style={{ width: `${(cardDetails.checklist.filter(item => item.isChecked).length / cardDetails.checklist.length) * 100}%` }}
+                  ></div>
+                </div>
 
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className="flex justify-start items-center w-full font-normal text-muted-foreground hover:text-muted-foreground"
-              >
-                <LuPaperclip className="size-4" />
-                <span>Attachment</span>
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="p-4 w-80" align="start">
-              <div className="space-y-2">
-                <Label className="font-semibold">Attach</Label>
-                <p className="text-muted-foreground text-sm">
-                  Select a file to attach
-                </p>
-                <div>
-                  <Label className="block cursor-pointer">
-                    <span className="sr-only">Choose a file</span>
-                    <Input
-                      type="file"
-                      className="hidden"
-                      onChange={handleAttachmentUpload}
-                      disabled={isUploading}
+                <div className="space-y-2">
+                  {cardDetails.checklist.map((item) => (
+                    <ChecklistItem
+                      key={item.id}
+                      item={item}
+                      onChange={handleChecklistChange}
+                      onRemove={handleRemoveChecklistItem}
                     />
-                    <Button variant="outline" className="w-full" asChild>
-                      <span>Choose a file</span>
-                    </Button>
-                  </Label>
+                  ))}
                 </div>
               </div>
-            </PopoverContent>
-          </Popover>
+            )}
+
+            {cardDetails.attachments.length > 0 && (
+              <div className="md:col-span-2 bg-muted/30 p-3 rounded-lg">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="bg-cyan-100 p-2 rounded-full text-cyan-600">
+                    <LuPaperclip className="size-4" />
+                  </div>
+                  <div>
+                    <p className="font-semibold">Attachments</p>
+                    <p className="text-muted-foreground text-sm">
+                      {cardDetails.attachments.length} files
+                    </p>
+                  </div>
+                </div>
+
+                <div className="gap-2 grid grid-cols-1 sm:grid-cols-2">
+                  {cardDetails.attachments.map((attachment, index) => (
+                    <AttachmentItem
+                      key={index}
+                      attachment={attachment}
+                      onRemove={() => handleRemoveAttachment(index)}
+                    />
+                  ))}
+
+                </div>
+              </div>
+            )}
+          </div>
+          <div className="bottom-0 sticky bg-background mt-4 pt-4 pb-2 border-t">
+            <Button
+              disabled={!cardDetails.title.trim() || cardLoading}
+              onClick={handleSubmit}
+              className="w-full sm:w-auto"
+            >
+              {cardLoading ? <Loading /> : isNew ? "Create Card" : "Update Card"}
+            </Button>
+          </div>
+        </div>
+        <div className="hidden md:block">
+          <SidebarActions
+            priority={cardDetails.priority}
+            dueDate={cardDetails.dueDate}
+            onPriorityChange={(value) => handleChange("priority", value)}
+            onDueDateChange={handleDateSubmit}
+            onAddChecklist={handleAddChecklist}
+            onAttachmentUpload={handleAttachmentUpload}
+            isUploading={isUploading}
+          />
         </div>
       </div>
     </>
   );
 }
+
+const ChecklistItem = ({
+  item,
+  onChange,
+  onRemove,
+}: {
+  item: { id: string; title: string; isChecked: boolean };
+  onChange: (
+    id: string,
+    field: "isChecked" | "title",
+    value: string | boolean
+  ) => void;
+  onRemove: (id: string) => void;
+}) => (
+  <div className="group flex items-center gap-2">
+    <Checkbox
+      checked={item.isChecked}
+      onCheckedChange={(checked) =>
+        onChange(item.id, "isChecked", checked as boolean)
+      }
+      className="rounded-md w-5 h-5"
+    />
+    <InlineEdit
+      value={item.title}
+      onChange={(value) => onChange(item.id, "title", value)}
+      className={`flex-1 ${item.isChecked ? "line-through text-muted-foreground" : ""
+        }`}
+    />
+    <Button
+      variant="ghost"
+      size="icon"
+      className="opacity-0 group-hover:opacity-100 w-6 h-6"
+      onClick={() => onRemove(item.id)}
+    >
+      <LuX className="size-4" />
+    </Button>
+  </div>
+);
+
+const AttachmentItem = ({
+  attachment,
+  onRemove,
+}: {
+  attachment: { name: string; url: string };
+  onRemove: () => void;
+}) => (
+  <div className="group flex justify-between items-center gap-2 cursor-pointer">
+    <div
+      className="flex items-center gap-2"
+      onClick={() => window.open(attachment.url, "_blank")}
+    >
+      <div className="flex justify-center items-center bg-muted-foreground px-1 rounded-md min-w-10 h-10">
+        <p className="font-semibold uppercase">
+          {attachment.name.split(".").pop()}
+        </p>
+      </div>
+      <span className="block max-w-[180px] font-semibold text-sm truncate">
+        {attachment.name}
+      </span>
+    </div>
+    <Button
+      variant="ghost"
+      size="icon"
+      className="opacity-0 group-hover:opacity-100 w-6 h-6"
+      onClick={(e) => {
+        e.stopPropagation();
+        onRemove();
+      }}
+    >
+      <LuX className="size-4" />
+    </Button>
+  </div>
+);
+
+const SidebarActions = ({
+  priority,
+  dueDate,
+  onPriorityChange,
+  onDueDateChange,
+  onAddChecklist,
+  onAttachmentUpload,
+  isUploading,
+}: {
+  priority: string | null;
+  dueDate: string | null;
+  onPriorityChange: (value: string) => void;
+  onDueDateChange: (date: Date) => void;
+  onAddChecklist: () => void;
+  onAttachmentUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  isUploading: boolean;
+}) => {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="sm:flex sm:flex-col gap-2 sm:gap-0 sm:space-y-4 grid grid-cols-2">
+      <Select value={priority || ""} onValueChange={onPriorityChange}>
+        <SelectTrigger className="w-full sm:w-[180px]">
+          <SelectValue
+            placeholder={
+              <div className="flex items-center gap-2">
+                <LuArrowUpDown className="size-4" />
+                <span>
+                  <span className="hidden sm:inline">Select </span>Priority
+                </span>
+              </div>
+            }
+          />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="HIGH">
+            <div className="flex items-center gap-2">
+              <span className="bg-red-500 w-10 h-3" />
+              <span>High</span>
+            </div>
+          </SelectItem>
+          <SelectItem value="MEDIUM">
+            <div className="flex items-center gap-2">
+              <span className="bg-yellow-500 w-10 h-3" />
+              <span>Medium</span>
+            </div>
+          </SelectItem>
+          <SelectItem value="LOW">
+            <div className="flex items-center gap-2">
+              <span className="bg-green-500 w-10 h-3" />
+              <span>Low</span>
+            </div>
+          </SelectItem>
+        </SelectContent>
+      </Select>
+
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            className="flex justify-between w-full font-normal text-muted-foreground hover:text-muted-foreground"
+          >
+            <div className="flex items-center gap-2">
+              <LuCalendarRange className="size-4" />
+              <span>Set Due Date</span>
+            </div>
+            <LuChevronDown className="opacity-50 size-4" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="">
+          <DateTimePickerForm
+            onSubmit={(data) => {
+              onDueDateChange(data.time);
+              setOpen(false);
+            }}
+            initialDate={dueDate ? new Date(dueDate) : undefined}
+          />
+        </PopoverContent>
+      </Popover>
+
+      <Button
+        variant="outline"
+        className="flex justify-start items-center w-full font-normal text-muted-foreground hover:text-muted-foreground"
+        onClick={onAddChecklist}
+      >
+        <LuSquareCheckBig className="size-4" />
+        <span>Add Checklist</span>
+      </Button>
+
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            className="flex justify-start items-center w-full font-normal text-muted-foreground hover:text-muted-foreground"
+            disabled={isUploading}
+          >
+            <LuPaperclip className="size-4" />
+            <span>{isUploading ? "Uploading..." : "Attachment"}</span>
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="p-4 w-80" align="start">
+          <div className="space-y-2">
+            <Label className="font-semibold">Attach</Label>
+            <p className="text-muted-foreground text-sm">
+              Select a file to attach
+            </p>
+            <div>
+              <Label className="block cursor-pointer">
+                <span className="sr-only">Choose a file</span>
+                <Input
+                  type="file"
+                  className="hidden"
+                  onChange={onAttachmentUpload}
+                  disabled={isUploading}
+                />
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  asChild
+                  disabled={isUploading}
+                >
+                  <span>Choose a file</span>
+                </Button>
+              </Label>
+            </div>
+          </div>
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+};
