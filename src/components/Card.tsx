@@ -1,8 +1,9 @@
+import Image from "next/image";
 import CardDialog from "./CardDialog";
 import React, { useState } from "react";
+import { CSS } from "@dnd-kit/utilities";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "@/redux/store";
-import { CSS } from "@dnd-kit/utilities";
 import { useSortable } from "@dnd-kit/sortable";
 import type { Card as CardType, List } from "@/types";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
@@ -82,10 +83,10 @@ export default function Card({ card, list }: { card: CardType; list: List }) {
               {card.priority && (
                 <span
                   className={`text-xs px-3 rounded w-fit text-card font-semibold ${card.priority === "HIGH"
-                      ? "bg-red-500"
-                      : card.priority === "MEDIUM"
-                        ? "bg-yellow-500"
-                        : "bg-green-500"
+                    ? "bg-red-500"
+                    : card.priority === "MEDIUM"
+                      ? "bg-yellow-500"
+                      : "bg-green-500"
                     }`}
                 >
                   {card.priority}
@@ -158,8 +159,8 @@ export default function Card({ card, list }: { card: CardType; list: List }) {
             <p className="text-sm break-words line-clamp-100">{card.title}</p>
           </div>
 
-          {card.dueDate ? (
-            <div className="flex items-center gap-2">
+          {card.dueDate || (card.assignees && card.assignees.length > 0) ? (
+            <div className={`flex  ${card.dueDate ? "justify-between" : "justify-end"} items-center gap-2`}>
               {card.dueDate && (
                 <span
                   className={`flex items-center gap-1.5 text-muted-foreground ${isPast && "bg-[#5c1e1a] px-1 rounded"
@@ -174,6 +175,27 @@ export default function Card({ card, list }: { card: CardType; list: List }) {
                     })}
                   </p>
                 </span>
+              )}
+
+              {card.assignees && card.assignees.length > 0 && (
+                <div className="flex items-center -space-x-2">
+                  {card.assignees.map((assignee, index) => (
+                    <Tooltip key={index}>
+                      <TooltipTrigger className="cursor-pointer">
+                        <Image
+                          src={assignee.boardMember.user.image || "/logo.png"}
+                          alt={assignee.boardMember.user.name || "user"}
+                          width={24}
+                          height={24}
+                          className="border rounded-full"
+                        />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{assignee.boardMember.user.name}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  ))}
+                </div>
               )}
             </div>
           ) : null}

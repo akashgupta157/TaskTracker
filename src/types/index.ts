@@ -1,8 +1,10 @@
 type User = {
   id: string;
-  name: string;
+  name: string | null;
   email: string;
-  image: string;
+  image: string | null;
+  createdAt: string;
+  updatedAt: string;
 };
 
 export interface AppError {
@@ -23,14 +25,15 @@ export type BoardState = {
 export type Board = {
   id: string;
   title: string;
-  description?: string;
+  description?: string | null;
+  background?: string | null;
   adminId: string;
   admin: User;
-  background: string;
   createdAt: string;
   updatedAt: string;
   lists: List[];
   members: BoardMember[];
+  invitations: Invitation[];
 };
 
 export type List = {
@@ -44,7 +47,7 @@ export type List = {
 };
 
 export type Card = {
-  id?: string;
+  id: string;
   title: string;
   description?: string | null;
   position: number;
@@ -53,9 +56,20 @@ export type Card = {
   listId: string;
   dueDate?: string | null;
   checklist?: ChecklistItem[] | null;
-  createdAt?: string;
-  updatedAt?: string;
   attachments?: Attachment[] | null;
+  createdAt: string;
+  updatedAt: string;
+  assignees?: never[] | CardAssignment[] | null;
+};
+
+export type CardAssignment = {
+  id: string;
+  cardId: string;
+  boardMemberId: string;
+  boardMember: BoardMember;
+  assignedAt: string;
+  assignedById: string;
+  assignedBy: User;
 };
 
 export type Attachment = {
@@ -76,6 +90,20 @@ export type BoardMember = {
   user: User;
   role: Role;
   createdAt: string;
+  assignedCards: CardAssignment[];
+};
+
+export type Invitation = {
+  id: string;
+  email: string;
+  boardId: string;
+  board: Board;
+  token: string;
+  createdAt: string;
+  expiresAt: string;
+  status: InvitationStatus;
+  inviterId: string;
+  inviter: User;
 };
 
 export enum Priority {

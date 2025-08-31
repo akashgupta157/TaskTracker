@@ -34,6 +34,17 @@ export async function GET(
           include: {
             cards: {
               orderBy: { position: "asc" },
+              include: {
+                assignees: {
+                  include: {
+                    boardMember: {
+                      include: {
+                        user: true,
+                      },
+                    },
+                  },
+                },
+              },
             },
           },
         },

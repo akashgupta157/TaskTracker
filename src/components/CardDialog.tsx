@@ -4,7 +4,6 @@ import RTEditor from "./RTEditor";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Loading } from "./Loading";
-import { Card, List } from "@/types";
 import { Button } from "./ui/button";
 import { formatDate } from "date-fns";
 import { Checkbox } from "./ui/checkbox";
@@ -13,6 +12,7 @@ import { useDispatch } from "react-redux";
 import { InlineEdit } from "./InlineEdit";
 import { Separator } from "./ui/separator";
 import { uploadSupabase } from "@/lib/utils";
+import { BoardMember, Card, List } from "@/types";
 import React, { useState, useCallback } from "react";
 import { AppDispatch, RootState } from "@/redux/store";
 import { DateTimePickerForm } from "./DateTimePickerForm";
@@ -41,7 +41,6 @@ import {
   LuX,
   LuText,
   LuCheck,
-  LuSearch,
   LuCircle,
   LuTrash2,
   LuCaptions,
@@ -53,7 +52,6 @@ import {
   LuSquareCheckBig,
 } from "react-icons/lu";
 
-// Generate a more reliable ID
 const generateId = () =>
   `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
@@ -86,7 +84,20 @@ export default function CardDialog({
     position: cardData?.position || list.cards?.length || 0,
     checklist: cardData?.checklist || [],
     attachments: cardData?.attachments || [],
+    assignees:
+      cardData?.assignees?.map(
+        (assignee: { boardMember: BoardMember }) => assignee.boardMember
+      ) || [],
   });
+
+  const [boardMember, setBoardMember] = useState(
+    currentBoard?.members.filter(
+      (member) =>
+        !cardDetails.assignees
+          .map((assignee) => assignee.userId)
+          .includes(member.userId)
+    ) || []
+  );
 
   const handleChange = useCallback(
     <T extends keyof typeof cardDetails>(
@@ -177,6 +188,33 @@ export default function CardDialog({
       attachments: prev.attachments.filter((_, i) => i !== index),
     }));
   }, []);
+
+  const handleAssigneeChange = useCallback(
+    (boardMember: BoardMember) => {
+      const isAlreadyAssigned = cardDetails.assignees.some(
+        (assignee) => assignee.userId === boardMember.userId
+      );
+
+      if (isAlreadyAssigned) {
+        setCardDetails((prev) => ({
+          ...prev,
+          assignees: prev.assignees.filter(
+            (assignee) => assignee.userId !== boardMember.userId
+          ),
+        }));
+        setBoardMember((prev) => [...prev, boardMember]);
+      } else {
+        setCardDetails((prev) => ({
+          ...prev,
+          assignees: [...prev.assignees, boardMember],
+        }));
+        setBoardMember((prev) =>
+          prev.filter((member) => member.userId !== boardMember.userId)
+        );
+      }
+    },
+    [cardDetails.assignees]
+  );
 
   const handleSubmit = useCallback(async () => {
     if (!cardDetails.title.trim()) {
@@ -337,6 +375,9 @@ export default function CardDialog({
               onAddChecklist={handleAddChecklist}
               onAttachmentUpload={handleAttachmentUpload}
               isUploading={isUploading}
+              boardMembers={boardMember}
+              assignees={cardDetails.assignees}
+              handleAssigneeChange={handleAssigneeChange}
             />
           </div>
 
@@ -351,17 +392,63 @@ export default function CardDialog({
             />
           </div>
 
+          {cardDetails.assignees.length > 0 && (
+            <div className="flex items-center gap-2 bg-muted/20 p-2 rounded-lg">
+              <LuUsersRound className="flex-shrink-0 size-4 text-muted-foreground" />
+              <div className="flex items-center -space-x-2">
+                {cardDetails.assignees.slice(0, 4).map((assignee) => (
+                  <Tooltip key={assignee.userId}>
+                    <TooltipTrigger asChild>
+                      <Image
+                        src={assignee.user?.image || "/default-avatar.png"}
+                        alt={assignee.user?.name || "User"}
+                        width={28}
+                        height={28}
+                        className="hover:z-10 border-2 border-background rounded-full hover:scale-110 transition-transform"
+                      />
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">
+                      <p className="text-sm">{assignee.user?.name}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                ))}
+              </div>
+              {cardDetails.assignees.length > 4 && (
+                <div className="flex justify-center items-center bg-muted rounded-full w-7 h-7 font-medium text-xs">
+                  +{cardDetails.assignees.length - 4}
+                </div>
+              )}
+              <span className="ml-1 text-muted-foreground text-sm">
+                {cardDetails.assignees.length} {cardDetails.assignees.length === 1 ? 'assignee' : 'assignees'}
+              </span>
+            </div>
+          )}
+
           <div className="gap-3 grid grid-cols-1 md:grid-cols-2">
             {cardDetails.priority && (
               <div className="bg-muted/30 p-3 rounded-lg">
                 <div className="flex justify-between items-start">
                   <div className="flex items-center gap-2">
-                    <div className={`p-2 rounded-full ${cardDetails.priority === "HIGH" ? "bg-red-100 text-red-600" : cardDetails.priority === "MEDIUM" ? "bg-yellow-100 text-yellow-600" : "bg-green-100 text-green-600"}`}>
+                    <div
+                      className={`p-2 rounded-full ${cardDetails.priority === "HIGH"
+                        ? "bg-red-100 text-red-600"
+                        : cardDetails.priority === "MEDIUM"
+                          ? "bg-yellow-100 text-yellow-600"
+                          : "bg-green-100 text-green-600"
+                        }`}
+                    >
                       <LuArrowUpDown className="size-4" />
                     </div>
                     <div>
                       <p className="text-muted-foreground text-sm">Priority</p>
-                      <p className={`font-semibold ${cardDetails.priority === "HIGH" ? "text-red-600" : cardDetails.priority === "MEDIUM" ? "text-yellow-600" : "text-green-600"}`}>
+                      <p
+                        className={`font-semibold ${cardDetails.priority === "HIGH"
+                          ? "text-red-600"
+                          : cardDetails.priority === "MEDIUM"
+                            ? "text-yellow-600"
+                            : "text-green-600"
+                          }`}
+                      >
                         {cardDetails.priority}
                       </p>
                     </div>
@@ -417,7 +504,11 @@ export default function CardDialog({
                     <div>
                       <p className="font-semibold">Checklist</p>
                       <p className="text-muted-foreground text-sm">
-                        {cardDetails.checklist.filter(item => item.isChecked).length} of {cardDetails.checklist.length} completed
+                        {
+                          cardDetails.checklist.filter((item) => item.isChecked)
+                            .length
+                        }{" "}
+                        of {cardDetails.checklist.length} completed
                       </p>
                     </div>
                   </div>
@@ -425,7 +516,14 @@ export default function CardDialog({
                   <div className="md:hidden bg-gray-200 rounded-full w-24 h-2 overflow-hidden">
                     <div
                       className="bg-green-500 h-full transition-all duration-300"
-                      style={{ width: `${(cardDetails.checklist.filter(item => item.isChecked).length / cardDetails.checklist.length) * 100}%` }}
+                      style={{
+                        width: `${(cardDetails.checklist.filter(
+                          (item) => item.isChecked
+                        ).length /
+                          cardDetails.checklist.length) *
+                          100
+                          }%`,
+                      }}
                     ></div>
                   </div>
                 </div>
@@ -433,7 +531,13 @@ export default function CardDialog({
                 <div className="hidden md:block bg-gray-200 mb-3 rounded-full w-full h-2 overflow-hidden">
                   <div
                     className="bg-green-500 h-full transition-all duration-300"
-                    style={{ width: `${(cardDetails.checklist.filter(item => item.isChecked).length / cardDetails.checklist.length) * 100}%` }}
+                    style={{
+                      width: `${(cardDetails.checklist.filter((item) => item.isChecked)
+                        .length /
+                        cardDetails.checklist.length) *
+                        100
+                        }%`,
+                    }}
                   ></div>
                 </div>
 
@@ -472,7 +576,6 @@ export default function CardDialog({
                       onRemove={() => handleRemoveAttachment(index)}
                     />
                   ))}
-
                 </div>
               </div>
             )}
@@ -483,7 +586,13 @@ export default function CardDialog({
               onClick={handleSubmit}
               className="w-full sm:w-auto"
             >
-              {cardLoading ? <Loading /> : isNew ? "Create Card" : "Update Card"}
+              {cardLoading ? (
+                <Loading />
+              ) : isNew ? (
+                "Create Card"
+              ) : (
+                "Update Card"
+              )}
             </Button>
           </div>
         </div>
@@ -496,6 +605,9 @@ export default function CardDialog({
             onAddChecklist={handleAddChecklist}
             onAttachmentUpload={handleAttachmentUpload}
             isUploading={isUploading}
+            boardMembers={boardMember}
+            assignees={cardDetails.assignees}
+            handleAssigneeChange={handleAssigneeChange}
           />
         </div>
       </div>
@@ -584,6 +696,9 @@ const SidebarActions = ({
   onAddChecklist,
   onAttachmentUpload,
   isUploading,
+  boardMembers,
+  assignees,
+  handleAssigneeChange,
 }: {
   priority: string | null;
   dueDate: string | null;
@@ -592,6 +707,9 @@ const SidebarActions = ({
   onAddChecklist: () => void;
   onAttachmentUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
   isUploading: boolean;
+  boardMembers: BoardMember[];
+  assignees: BoardMember[];
+  handleAssigneeChange: (boardMember: BoardMember) => void;
 }) => {
   const [open, setOpen] = useState(false);
 
@@ -702,6 +820,75 @@ const SidebarActions = ({
               </Label>
             </div>
           </div>
+        </PopoverContent>
+      </Popover>
+
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            className="flex justify-start items-center w-full font-normal text-muted-foreground hover:text-muted-foreground"
+          >
+            <LuUsersRound className="size-4" />
+            <span>Add Assignees</span>
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent
+          className="space-y-4 p-4 w-80 max-h-80 overflow-y-auto"
+          align="start"
+        >
+          {assignees.length > 0 && (
+            <div>
+              <Label className="font-semibold tex-sm">Card Members</Label>
+              <div className="flex flex-col gap-2 mt-2">
+                {assignees.map((member, index) => (
+                  <div
+                    key={index}
+                    className="group flex justify-between items-center gap-2 hover:bg-muted-foreground/10 p-2 rounded-md cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Image
+                        src={member?.user?.image || "/public/logo.png"}
+                        alt={member?.user?.name || ""}
+                        width={25}
+                        height={25}
+                        className="rounded-full"
+                      />
+                      <span className="text-sm">{member?.user?.name}</span>
+                    </div>
+                    <LuX
+                      className="opacity-0 group-hover:opacity-100"
+                      onClick={() => handleAssigneeChange(member)}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {assignees.length > 0 && boardMembers.length > 0 && <Separator />}
+          {boardMembers.length > 0 && (
+            <div>
+              <Label className="font-semibold tex-sm">Board Members</Label>
+              <div className="flex flex-col gap-2 mt-2">
+                {boardMembers.map((member, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center gap-2 hover:bg-muted-foreground/10 p-2 rounded-md cursor-pointer"
+                    onClick={() => handleAssigneeChange(member)}
+                  >
+                    <Image
+                      src={member?.user?.image || "/public/logo.png"}
+                      alt={member?.user?.name || ""}
+                      width={25}
+                      height={25}
+                      className="rounded-full"
+                    />
+                    <span className="text-sm">{member?.user?.name}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </PopoverContent>
       </Popover>
     </div>

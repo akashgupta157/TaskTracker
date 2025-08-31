@@ -93,7 +93,7 @@ export default function Header({
                         <PopoverTrigger asChild>
                           <Image
                             src={member.user.image || "/logo.png"}
-                            alt={member.user.name}
+                            alt={member.user.name || "user"}
                             width={25}
                             height={25}
                             className="border rounded-full size-6 sm:size-7 md:size-8 cursor-pointer"
@@ -108,7 +108,7 @@ export default function Header({
                       <div className="flex items-center gap-3">
                         <Image
                           src={member.user.image || "/logo.png"}
-                          alt={member.user.name}
+                          alt={member.user.name || "user"}
                           width={25}
                           height={25}
                           className="z-1 rounded-full size-10 sm:size-12 md:size-14 cursor-pointer"

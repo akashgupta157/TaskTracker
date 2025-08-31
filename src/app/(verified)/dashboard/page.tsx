@@ -106,22 +106,22 @@ export default function Dashboard() {
 
         {loading
           ? Array.from({ length: 3 }).map((_, i) => (
-              <Skeleton key={i} className="rounded-xl w-full h-28 sm:h-32" />
-            ))
+            <Skeleton key={i} className="rounded-xl w-full h-28 sm:h-32" />
+          ))
           : boards.map((board) => (
-              <div
-                key={board.id}
-                onClick={() => {
-                  dispatch({ type: "board/setCurrentBoard", payload: board });
-                  router.push(`/board/${board.id}`);
-                }}
-                className={`rounded-xl w-full h-28 sm:h-32 relative shadow-xl dark:[box-shadow:0_0_20px_0_rgba(80,80,80,0.30)] cursor-pointer ${board.background}`}
-              >
-                <p className="bottom-0 absolute bg-background px-3 sm:px-5 py-1.5 rounded-b-xl w-full text-sm sm:text-base">
-                  {board.title}
-                </p>
-              </div>
-            ))}
+            <div
+              key={board.id}
+              onClick={() => {
+                dispatch({ type: "board/setCurrentBoard", payload: board });
+                router.push(`/board/${board.id}`);
+              }}
+              className={`rounded-xl w-full h-28 sm:h-32 relative shadow-xl dark:[box-shadow:0_0_20px_0_rgba(80,80,80,0.30)] cursor-pointer ${board.background}`}
+            >
+              <p className="bottom-0 absolute bg-background px-3 sm:px-5 py-1.5 rounded-b-xl w-full text-sm sm:text-base">
+                {board.title}
+              </p>
+            </div>
+          ))}
       </div>
     </div>
   );
