@@ -148,7 +148,6 @@ export default function ListContainer({
     ) {
       const activeListData = active.data.current.list;
       const overListData = over.data.current.list;
-      console.log(activeListData, overListData);
       if (activeListData.id !== overListData.id) {
         dispatch(
           moveList({

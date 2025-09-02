@@ -38,6 +38,7 @@ model Board {
   lists       List[]
   members     BoardMember[]
   invitations Invitation[]
+  Card        Card[]
 
   @@index([adminId])
   @@map("boards")
@@ -90,6 +91,8 @@ model Card {
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
   assignees   CardAssignment[]
+  boardId     String
+  board       Board            @relation(fields: [boardId], references: [id], onDelete: Cascade)
 
   @@index([listId])
   @@index([listId, position])

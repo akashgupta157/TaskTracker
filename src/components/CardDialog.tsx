@@ -240,6 +240,7 @@ export default function CardDialog({
           addNewCard({
             ...cleanCard,
             position: newPosition,
+            boardId: currentBoard?.id as string,
           })
         );
         toast.success("Card created successfully");
@@ -249,6 +250,7 @@ export default function CardDialog({
             ...cardData,
             ...cleanCard,
             position: newPosition,
+            boardId: currentBoard?.id as string,
           })
         );
         toast.success("Card updated successfully");

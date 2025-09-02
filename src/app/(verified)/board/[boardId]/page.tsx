@@ -6,13 +6,17 @@ import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/redux/store";
 import ListContainer from "@/components/ListContainer";
 import { getBoardDetails } from "@/redux/slices/boardSlice";
+import { useBoardSubscriptions } from "@/lib/realtime";
+
 export default function Board() {
   const dispatch = useDispatch<AppDispatch>();
   const { currentBoard, loading } = useSelector(
     (state: RootState) => state.board
   );
   const pathName = usePathname();
-  const id = pathName.split("/").pop();
+  const id = pathName.split("/").pop()
+
+  useBoardSubscriptions(id as string);
 
   useEffect(() => {
     if (!id) return;

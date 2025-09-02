@@ -60,6 +60,7 @@ export type Card = {
   createdAt: string;
   updatedAt: string;
   assignees?: never[] | CardAssignment[] | null;
+  boardId: string;
 };
 
 export type CardAssignment = {
