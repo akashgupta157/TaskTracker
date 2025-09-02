@@ -111,7 +111,6 @@ export const uploadSupabase = async (file: File) => {
     const { data: file } = await supabase.storage
       .from("attachments")
       .getPublicUrl(data?.path);
-    console.log(file);
     return file.publicUrl;
   }
 };

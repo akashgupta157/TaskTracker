@@ -118,11 +118,11 @@ export default function Card({ card, list }: { card: CardType; list: List }) {
               {Array.isArray(card.attachments) &&
                 card.attachments.length > 0 && (
                   <Tooltip>
-                    <TooltipTrigger className="cursor-pointer">
-                      <LuPaperclip />
+                    <TooltipTrigger className="flex items-center gap-1 cursor-pointer">
+                      <LuPaperclip /> <span className="text-xs">{card.attachments.length}</span>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>This card has attachments</p>
+                      <p>This card has {card.attachments.length} attachments</p>
                     </TooltipContent>
                   </Tooltip>
                 )}

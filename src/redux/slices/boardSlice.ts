@@ -339,7 +339,6 @@ const boardSlice = createSlice({
       )
       .addCase(getBoardDetails.rejected, (state, action) => {
         state.loading = false;
-        console.log("Error fetching board details:", action.error);
         state.error = handleApiError(action.error);
       })
       .addCase(addNewList.fulfilled, (state, action: PayloadAction<List>) => {

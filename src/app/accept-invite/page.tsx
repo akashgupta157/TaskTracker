@@ -27,7 +27,6 @@ function AcceptInviteContent() {
         const { data } = await axios.get(
           `api/invitations/validate?token=${token}`
         );
-        console.log(data);
         const { valid, email, boardId, userExists } = data;
 
         if (!valid) {

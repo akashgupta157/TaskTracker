@@ -81,13 +81,14 @@ export default function CardDialog({
     priority: cardData?.priority || null,
     dueDate: cardData?.dueDate || null,
     isCompleted: cardData?.isCompleted || false,
-    position: cardData?.position || list.cards?.length || 0,
+    position: isNew ? list.cards.length : cardData?.position,
     checklist: cardData?.checklist || [],
     attachments: cardData?.attachments || [],
     assignees:
       cardData?.assignees?.map(
         (assignee: { boardMember: BoardMember }) => assignee.boardMember
       ) || [],
+    boardId: currentBoard?.id,
   });
 
   const [boardMember, setBoardMember] = useState(
@@ -221,37 +222,15 @@ export default function CardDialog({
       toast.error("Card title is required");
       return;
     }
-
-    const cleanCard = Object.fromEntries(
-      Object.entries(cardDetails).filter(
-        ([_, value]) => value !== null && value !== undefined
-      )
-    ) as Card;
-
-    const newPosition =
-      cardDetails.listId !== cardData?.listId
-        ? currentBoard?.lists.find((l) => l.id === cardDetails.listId)?.cards
-          ?.length || 0
-        : cardData?.position;
-
     try {
       if (isNew) {
         await dispatch(
-          addNewCard({
-            ...cleanCard,
-            position: newPosition,
-            boardId: currentBoard?.id as string,
-          })
+          addNewCard(cardDetails as Card)
         );
         toast.success("Card created successfully");
       } else {
         await dispatch(
-          reviseCard({
-            ...cardData,
-            ...cleanCard,
-            position: newPosition,
-            boardId: currentBoard?.id as string,
-          })
+          reviseCard({ ...cardData, ...cardDetails } as Card)
         );
         toast.success("Card updated successfully");
       }
