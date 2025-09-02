@@ -1,34 +1,15 @@
-import { handleApiError } from "@/lib/utils";
-import { BoardState, Card, List } from "@/types";
+import { BoardState, List, Card } from "@/types";
+import { addNewList, deleteList } from "./listSlice";
+import { handleApiError, normalizePositions } from "@/lib/utils";
+import { addNewCard, reviseCard, deleteCard } from "./cardSlice";
 import { createBoard, fetchBoards, fetchBoardDetails } from "@/lib/api/board";
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
-import {
-  createNewList,
-  changeListTitle,
-  changeListPosition,
-  removeList,
-} from "@/lib/api/list";
-import {
-  updateCard,
-  createNewCard,
-  changeCardPosition,
-  toggleCardComplete,
-  removeCard,
-} from "@/lib/api/card";
 
 const initialState: BoardState = {
   boards: [],
   currentBoard: null,
   loading: false,
-  cardLoading: false,
   error: null,
-};
-
-const normalizePositions = (cards: Card[]): void => {
-  cards.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
-  cards.forEach((card, index) => {
-    card.position = index;
-  });
 };
 
 export const getBoards = createAsyncThunk("board/getBoards", async () => {
@@ -46,75 +27,6 @@ export const getBoardDetails = createAsyncThunk(
   "board/fetchBoardDetails",
   async (boardId: string) => {
     return await fetchBoardDetails(boardId);
-  }
-);
-
-export const addNewList = createAsyncThunk(
-  "board/addNewList",
-  async (listData: { title: string; position: number; boardId: string }) => {
-    return await createNewList(listData);
-  }
-);
-
-export const updateListPosition = createAsyncThunk(
-  "board/updateListPosition",
-  async (listData: {
-    boardId: string;
-    newPosition: number;
-    listId: string;
-  }) => {
-    return await changeListPosition(listData);
-  }
-);
-
-export const updateListTitle = createAsyncThunk(
-  "board/updateListName",
-  async (listData: { listId: string; title: string }) => {
-    return await changeListTitle(listData);
-  }
-);
-
-export const deleteList = createAsyncThunk(
-  "board/removeList",
-  async (listId: string) => {
-    const response = await removeList(listId);
-    return response.deletedListId || listId;
-  }
-);
-
-export const addNewCard = createAsyncThunk(
-  "board/addNewCard",
-  async (cardData: Card) => {
-    return await createNewCard(cardData);
-  }
-);
-
-export const reviseCard = createAsyncThunk(
-  "board/updateCard",
-  async (cardData: Card) => {
-    return await updateCard(cardData);
-  }
-);
-
-export const toggleCard = createAsyncThunk(
-  "board/toggleCardComplete",
-  async (cardId: string) => {
-    return await toggleCardComplete(cardId);
-  }
-);
-
-export const updateCardPosition = createAsyncThunk(
-  "board/updateCardPosition",
-  async (cardData: { cardId: string; newPosition: number; listId: string }) => {
-    return await changeCardPosition(cardData);
-  }
-);
-
-export const deleteCard = createAsyncThunk(
-  "board/deleteCard",
-  async (cardId: string) => {
-    const response = await removeCard(cardId);
-    return response.deletedCardId || cardId;
   }
 );
 
@@ -160,7 +72,6 @@ const boardSlice = createSlice({
       if (currentIndex === -1) return;
 
       const [movedList] = lists.splice(currentIndex, 1);
-
       lists.splice(newPosition, 0, movedList);
 
       state.currentBoard.lists = lists.map((list, index) => ({
@@ -193,7 +104,7 @@ const boardSlice = createSlice({
         if (cardIndex !== -1) {
           currentListIndex = i;
           currentCardIndex = cardIndex;
-          cardToMove = { ...lists[i].cards[cardIndex] }; // Create a copy
+          cardToMove = { ...lists[i].cards[cardIndex] };
           break;
         }
       }
@@ -203,37 +114,30 @@ const boardSlice = createSlice({
       const currentListId = cardToMove.listId;
       const isSameList = currentListId === newListId;
 
-      // 1. Remove card from current list
+      // Remove card from current list
       if (currentListIndex !== -1 && currentCardIndex !== -1) {
         lists[currentListIndex].cards.splice(currentCardIndex, 1);
-
-        // Update positions in the old list
-        lists[currentListIndex].cards.forEach((card, index) => {
-          card.position = index;
-        });
+        normalizePositions(lists[currentListIndex].cards);
       }
 
-      // 2. Find the new list
+      // Find the new list
       const newListIndex = lists.findIndex((list) => list.id === newListId);
       if (newListIndex === -1) return;
 
-      // 3. Make sure cards array exists
+      // Make sure cards array exists
       if (!lists[newListIndex].cards) {
         lists[newListIndex].cards = [];
       }
 
-      // 4. Adjust positions in the target list to make space
+      // Adjust positions in the target list
       if (isSameList) {
-        // Moving within the same list
         if (newPosition < currentCardIndex) {
-          // Moving up: shift cards from newPosition to currentCardIndex-1 down
           for (let i = newPosition; i < currentCardIndex; i++) {
             if (lists[newListIndex].cards[i]) {
               lists[newListIndex].cards[i].position += 1;
             }
           }
         } else if (newPosition > currentCardIndex) {
-          // Moving down: shift cards from currentCardIndex+1 to newPosition up
           for (let i = currentCardIndex + 1; i <= newPosition; i++) {
             if (lists[newListIndex].cards[i]) {
               lists[newListIndex].cards[i].position -= 1;
@@ -241,7 +145,6 @@ const boardSlice = createSlice({
           }
         }
       } else {
-        // Moving to different list: shift all cards from newPosition onward down
         for (let i = newPosition; i < lists[newListIndex].cards.length; i++) {
           if (lists[newListIndex].cards[i]) {
             lists[newListIndex].cards[i].position += 1;
@@ -249,24 +152,21 @@ const boardSlice = createSlice({
         }
       }
 
-      // 5. Insert card at new position
+      // Insert card at new position
       const updatedCard = {
         ...cardToMove,
         position: newPosition,
         listId: newListId,
       };
 
-      // Make sure we don't go out of bounds
       const safePosition = Math.min(
         newPosition,
         lists[newListIndex].cards.length
       );
       lists[newListIndex].cards.splice(safePosition, 0, updatedCard);
 
-      // 6. Normalize positions in the new list (0, 1, 2, ...)
-      lists[newListIndex].cards.forEach((card, index) => {
-        card.position = index;
-      });
+      // Normalize positions in the new list
+      normalizePositions(lists[newListIndex].cards);
 
       state.currentBoard.lists = lists;
     },
@@ -347,11 +247,7 @@ const boardSlice = createSlice({
           action.payload.boardId === state.currentBoard.id
         ) {
           state.currentBoard.lists.push({ ...action.payload, cards: [] });
-          normalizePositions(
-            state.currentBoard.lists.map(
-              (l) => ({ ...l, position: l.position } as unknown as Card)
-            )
-          );
+          normalizePositions(state.currentBoard.lists);
         }
       })
       .addCase(deleteList.fulfilled, (state, action) => {
@@ -360,19 +256,10 @@ const boardSlice = createSlice({
           state.currentBoard.lists = state.currentBoard.lists.filter(
             (list) => list.id !== deletedListId
           );
-          state.currentBoard.lists.forEach((list, index) => {
-            list.position = index;
-          });
+          normalizePositions(state.currentBoard.lists);
         }
       })
-      .addCase(deleteList.rejected, (state, action) => {
-        state.error = handleApiError(action.error);
-      })
-      .addCase(addNewCard.pending, (state) => {
-        state.cardLoading = true;
-      })
       .addCase(addNewCard.fulfilled, (state, action: PayloadAction<Card>) => {
-        state.cardLoading = false;
         if (state.currentBoard) {
           const listIndex = state.currentBoard.lists.findIndex(
             (list) => list.id === action.payload.listId
@@ -383,15 +270,7 @@ const boardSlice = createSlice({
           }
         }
       })
-      .addCase(addNewCard.rejected, (state, action) => {
-        state.cardLoading = false;
-        state.error = handleApiError(action.error);
-      })
-      .addCase(reviseCard.pending, (state) => {
-        state.cardLoading = true;
-      })
       .addCase(reviseCard.fulfilled, (state, action: PayloadAction<Card>) => {
-        state.cardLoading = false;
         if (!state.currentBoard) return;
 
         const {
@@ -399,65 +278,39 @@ const boardSlice = createSlice({
           listId: newListId,
           position: newPosition,
         } = action.payload;
-        let previousListId: string | undefined;
-        let previousPosition: number | undefined;
 
+        // Remove card from current list
         state.currentBoard.lists.forEach((list) => {
           const cardIndex = list.cards.findIndex((card) => card.id === cardId);
           if (cardIndex !== -1) {
-            previousListId = list.id;
-            previousPosition = list.cards[cardIndex].position;
             list.cards.splice(cardIndex, 1);
             normalizePositions(list.cards);
           }
         });
 
+        // Add card to new list
         const newListIndex = state.currentBoard.lists.findIndex(
           (list) => list.id === newListId
         );
-
         if (newListIndex === -1) return;
 
         const targetList = state.currentBoard.lists[newListIndex];
-
-        if (typeof newPosition === "number") {
-          targetList.cards.forEach((card) => {
-            if ((card.position ?? 0) >= newPosition && card.id !== cardId) {
-              card.position = (card.position ?? 0) + 1;
-            }
-          });
-          targetList.cards.push({ ...action.payload, position: newPosition });
-        } else {
-          targetList.cards.push({
-            ...action.payload,
-            position: targetList.cards.length,
-          });
-        }
-
+        targetList.cards.push(action.payload);
         normalizePositions(targetList.cards);
-      })
-      .addCase(reviseCard.rejected, (state, action) => {
-        state.cardLoading = false;
-        state.error = handleApiError(action.error);
       })
       .addCase(deleteCard.fulfilled, (state, action: PayloadAction<string>) => {
         if (!state.currentBoard) return;
 
         const deletedCardId = action.payload;
-
         state.currentBoard.lists.forEach((list) => {
           const cardIndex = list.cards.findIndex(
             (card) => card.id === deletedCardId
           );
           if (cardIndex !== -1) {
             list.cards.splice(cardIndex, 1);
-
             normalizePositions(list.cards);
           }
         });
-      })
-      .addCase(deleteCard.rejected, (state, action) => {
-        state.error = handleApiError(action.error);
       });
   },
 });

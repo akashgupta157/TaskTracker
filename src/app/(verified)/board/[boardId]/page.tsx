@@ -1,12 +1,13 @@
 "use client";
+
 import React, { useEffect } from "react";
 import Header from "@/components/Header";
 import { usePathname } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/redux/store";
 import ListContainer from "@/components/ListContainer";
-import { getBoardDetails } from "@/redux/slices/boardSlice";
 import { useBoardSubscriptions } from "@/lib/realtime";
+import { getBoardDetails } from "@/redux/slices/boardSlice";
 
 export default function Board() {
   const dispatch = useDispatch<AppDispatch>();
@@ -14,7 +15,7 @@ export default function Board() {
     (state: RootState) => state.board
   );
   const pathName = usePathname();
-  const id = pathName.split("/").pop()
+  const id = pathName.split("/").pop();
 
   useBoardSubscriptions(id as string);
 

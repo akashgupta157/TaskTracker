@@ -11,7 +11,10 @@ import { AppDispatch } from "@/redux/store";
 import { RiCloseLine } from "react-icons/ri";
 import React, { useMemo, useState } from "react";
 import { SortableContext } from "@dnd-kit/sortable";
+import { updateCardPosition } from "@/redux/slices/cardSlice";
+import { moveList, moveCard } from "@/redux/slices/boardSlice";
 import type { List as ListType, Card as CardType } from "@/types";
+import { addNewList, updateListPosition } from "@/redux/slices/listSlice";
 import {
   DndContext,
   DragEndEvent,
@@ -25,13 +28,6 @@ import {
   rectIntersection,
   pointerWithin,
 } from "@dnd-kit/core";
-import {
-  moveList,
-  addNewList,
-  updateListPosition,
-  moveCard,
-  updateCardPosition,
-} from "@/redux/slices/boardSlice";
 
 export default function ListContainer({
   currentBoard,

@@ -6,8 +6,9 @@ import { useDispatch } from "react-redux";
 import { AppDispatch } from "@/redux/store";
 import { useSortable } from "@dnd-kit/sortable";
 import type { Card as CardType, List } from "@/types";
+import { toggleCard } from "@/redux/slices/cardSlice";
+import { toggleCardIsComplete } from "@/redux/slices/boardSlice";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
-import { toggleCard, toggleCardIsComplete } from "@/redux/slices/boardSlice";
 import {
   Dialog,
   DialogTitle,
@@ -72,22 +73,24 @@ export default function Card({ card, list }: { card: CardType; list: List }) {
           style={style}
           {...attributes}
           {...listeners}
-          className={`space-y-2 bg-card/60 p-3 border-2 rounded-xl font-sans cursor-pointer border-muted hover:border-white ${isDragging ? "opacity-50" : ""
-            }`}
+          className={`space-y-2 bg-card/60 p-3 border-2 rounded-xl font-sans cursor-pointer border-muted hover:border-white ${
+            isDragging ? "opacity-50" : ""
+          }`}
         >
           {(card.description && card.description !== "<p></p>") ||
-            (card.checklist && card.checklist.length > 0) ||
-            (card.attachments && card.attachments.length > 0) ||
-            card.priority ? (
+          (card.checklist && card.checklist.length > 0) ||
+          (card.attachments && card.attachments.length > 0) ||
+          card.priority ? (
             <div className="flex items-center gap-2">
               {card.priority && (
                 <span
-                  className={`text-xs px-3 rounded w-fit text-card font-semibold ${card.priority === "HIGH"
-                    ? "bg-red-500"
-                    : card.priority === "MEDIUM"
+                  className={`text-xs px-3 rounded w-fit text-card font-semibold ${
+                    card.priority === "HIGH"
+                      ? "bg-red-500"
+                      : card.priority === "MEDIUM"
                       ? "bg-yellow-500"
                       : "bg-green-500"
-                    }`}
+                  }`}
                 >
                   {card.priority}
                 </span>
@@ -119,7 +122,8 @@ export default function Card({ card, list }: { card: CardType; list: List }) {
                 card.attachments.length > 0 && (
                   <Tooltip>
                     <TooltipTrigger className="flex items-center gap-1 cursor-pointer">
-                      <LuPaperclip /> <span className="text-xs">{card.attachments.length}</span>
+                      <LuPaperclip />{" "}
+                      <span className="text-xs">{card.attachments.length}</span>
                     </TooltipTrigger>
                     <TooltipContent>
                       <p>This card has {card.attachments.length} attachments</p>
@@ -160,11 +164,16 @@ export default function Card({ card, list }: { card: CardType; list: List }) {
           </div>
 
           {card.dueDate || (card.assignees && card.assignees.length > 0) ? (
-            <div className={`flex  ${card.dueDate ? "justify-between" : "justify-end"} items-center gap-2`}>
+            <div
+              className={`flex  ${
+                card.dueDate ? "justify-between" : "justify-end"
+              } items-center gap-2`}
+            >
               {card.dueDate && (
                 <span
-                  className={`flex items-center gap-1.5 text-muted-foreground ${isPast && "bg-[#5c1e1a] px-1 rounded"
-                    }`}
+                  className={`flex items-center gap-1.5 text-muted-foreground ${
+                    isPast && "bg-[#5c1e1a] px-1 rounded"
+                  }`}
                 >
                   <LuClock />
                   <p className="text-sm">

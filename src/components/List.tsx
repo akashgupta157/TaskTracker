@@ -1,4 +1,5 @@
 import Card from "./Card";
+import { toast } from "sonner";
 import type { List } from "@/types";
 import { Button } from "./ui/button";
 import CardDialog from "./CardDialog";
@@ -8,12 +9,9 @@ import { useDispatch } from "react-redux";
 import { AppDispatch } from "@/redux/store";
 import React, { useMemo, useState } from "react";
 import { LuPlus, LuTrash2 } from "react-icons/lu";
+import { modifyListTitle } from "@/redux/slices/boardSlice";
 import { SortableContext, useSortable } from "@dnd-kit/sortable";
-import {
-  deleteList,
-  modifyListTitle,
-  updateListTitle,
-} from "@/redux/slices/boardSlice";
+import { deleteList, updateListTitle } from "@/redux/slices/listSlice";
 import {
   Dialog,
   DialogContent,
@@ -32,7 +30,6 @@ import {
   AlertDialogTrigger,
   AlertDialogDescription,
 } from "./ui/alert-dialog";
-import { toast } from "sonner";
 
 export default function List({ list }: { list: List }) {
   const dispatch = useDispatch<AppDispatch>();
@@ -77,9 +74,8 @@ export default function List({ list }: { list: List }) {
       style={style}
       data-list-id={list.id}
       data-type="List"
-      className={`flex flex-col bg-zinc-100 dark:bg-zinc-950 p-3 rounded-xl min-w-[280px] max-h-[calc(100vh-172px)] font-sans ${
-        isDragging ? "opacity-50" : ""
-      }`}
+      className={`flex flex-col bg-zinc-100 dark:bg-zinc-950 p-3 rounded-xl min-w-[280px] max-h-[calc(100vh-172px)] font-sans ${isDragging ? "opacity-50" : ""
+        }`}
     >
       <div
         {...attributes}

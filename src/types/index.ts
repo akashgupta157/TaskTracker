@@ -18,7 +18,6 @@ export type BoardState = {
   boards: Board[];
   currentBoard: (Board & { lists: (List & { cards: Card[] })[] }) | null;
   loading: boolean;
-  cardLoading: boolean;
   error: AppError | null;
 };
 

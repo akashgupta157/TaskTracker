@@ -67,7 +67,6 @@ export async function PATCH(request: NextRequest) {
         },
       },
     });
-    console.log(card);
     return NextResponse.json(card);
   } catch (error) {
     const { message, statusCode } = handleApiError(error);

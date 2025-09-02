@@ -1,12 +1,19 @@
 import axios from "axios";
-import { AppError } from "@/types";
 import { twMerge } from "tailwind-merge";
 import { clsx, type ClassValue } from "clsx";
+import { AppError, Card, List } from "@/types";
 import { createClient } from "@supabase/supabase-js";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
+
+export const normalizePositions = (items: List[] | Card[]): void => {
+  items.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+  items.forEach((item, index) => {
+    item.position = index;
+  });
+};
 
 export const handleApiError = (error: unknown): AppError => {
   if (axios.isAxiosError(error)) {

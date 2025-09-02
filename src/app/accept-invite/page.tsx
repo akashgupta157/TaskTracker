@@ -1,10 +1,10 @@
 "use client";
 import axios from "axios";
-import { LuLoader } from "react-icons/lu";
-import { useEffect, useState, Suspense } from "react";
-import { signIn, useSession } from "next-auth/react";
-import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
+import { LuLoader } from "react-icons/lu";
+import { signIn, useSession } from "next-auth/react";
+import { useEffect, useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 function AcceptInviteContent() {
   const router = useRouter();

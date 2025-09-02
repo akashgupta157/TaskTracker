@@ -18,7 +18,7 @@ import { AppDispatch, RootState } from "@/redux/store";
 import { DateTimePickerForm } from "./DateTimePickerForm";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
-import { addNewCard, deleteCard, reviseCard } from "@/redux/slices/boardSlice";
+import { addNewCard, deleteCard, reviseCard } from "@/redux/slices/cardSlice";
 import {
   Select,
   SelectItem,
@@ -67,9 +67,11 @@ export default function CardDialog({
   setDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
   const dispatch = useDispatch<AppDispatch>();
-  const { currentBoard, cardLoading } = useSelector(
+  const { currentBoard } = useSelector(
     (state: RootState) => state.board
   );
+
+  const { cardLoading } = useSelector((state: RootState) => state.card);
 
   const [open, setOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
