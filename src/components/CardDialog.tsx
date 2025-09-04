@@ -823,7 +823,7 @@ const SidebarActions = ({
           {assignees.length > 0 && (
             <div>
               <Label className="font-semibold tex-sm">Card Members</Label>
-              <div className="flex flex-col gap-2 mt-2">
+              <div className="flex flex-col mt-2">
                 {assignees.map((member, index) => (
                   <div
                     key={index}
@@ -852,7 +852,7 @@ const SidebarActions = ({
           {boardMembers.length > 0 && (
             <div>
               <Label className="font-semibold tex-sm">Board Members</Label>
-              <div className="flex flex-col gap-2 mt-2">
+              <div className="flex flex-col mt-2">
                 {boardMembers.map((member, index) => (
                   <div
                     key={index}

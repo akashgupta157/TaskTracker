@@ -1,9 +1,15 @@
 import { BoardState, List, Card } from "@/types";
+import { CardFilters } from "@/types/CardFilter";
 import { addNewList, deleteList } from "./listSlice";
 import { handleApiError, normalizePositions } from "@/lib/utils";
 import { addNewCard, reviseCard, deleteCard } from "./cardSlice";
-import { createBoard, fetchBoards, fetchBoardDetails } from "@/lib/api/board";
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
+import {
+  createBoard,
+  fetchBoards,
+  fetchBoardDetails,
+  fetchFilterBoards,
+} from "@/lib/api/board";
 
 const initialState: BoardState = {
   boards: [],
@@ -27,6 +33,19 @@ export const getBoardDetails = createAsyncThunk(
   "board/fetchBoardDetails",
   async (boardId: string) => {
     return await fetchBoardDetails(boardId);
+  }
+);
+
+export const filterBoard = createAsyncThunk(
+  "board/filterBoard",
+  async ({
+    boardId,
+    filterData,
+  }: {
+    boardId: string;
+    filterData: CardFilters;
+  }) => {
+    return await fetchFilterBoards(boardId, filterData);
   }
 );
 
@@ -238,6 +257,20 @@ const boardSlice = createSlice({
         }
       )
       .addCase(getBoardDetails.rejected, (state, action) => {
+        state.loading = false;
+        state.error = handleApiError(action.error);
+      })
+      .addCase(
+        filterBoard.fulfilled,
+        (
+          state,
+          action: PayloadAction<NonNullable<BoardState["currentBoard"]>>
+        ) => {
+          state.loading = false;
+          state.currentBoard = action.payload;
+        }
+      )
+      .addCase(filterBoard.rejected, (state, action) => {
         state.loading = false;
         state.error = handleApiError(action.error);
       })

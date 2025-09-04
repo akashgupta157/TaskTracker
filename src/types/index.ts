@@ -49,7 +49,7 @@ export type Card = {
   id: string;
   title: string;
   description?: string | null;
-  position: number ;
+  position: number;
   priority?: Priority | null;
   isCompleted: boolean;
   listId: string;

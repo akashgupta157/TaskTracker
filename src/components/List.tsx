@@ -9,6 +9,7 @@ import { useDispatch } from "react-redux";
 import { AppDispatch } from "@/redux/store";
 import React, { useMemo, useState } from "react";
 import { LuPlus, LuTrash2 } from "react-icons/lu";
+import { useSearchParams } from "next/navigation";
 import { modifyListTitle } from "@/redux/slices/boardSlice";
 import { SortableContext, useSortable } from "@dnd-kit/sortable";
 import { deleteList, updateListTitle } from "@/redux/slices/listSlice";
@@ -32,7 +33,9 @@ import {
 } from "./ui/alert-dialog";
 
 export default function List({ list }: { list: List }) {
+  const { size } = useSearchParams();
   const dispatch = useDispatch<AppDispatch>();
+
   const [open, setOpen] = useState(false);
   const [listTitle, setListTitle] = useState(list.title);
 
@@ -74,8 +77,9 @@ export default function List({ list }: { list: List }) {
       style={style}
       data-list-id={list.id}
       data-type="List"
-      className={`flex flex-col bg-zinc-100 dark:bg-zinc-950 p-3 rounded-xl min-w-[280px] max-h-[calc(100vh-172px)] font-sans ${isDragging ? "opacity-50" : ""
-        }`}
+      className={`flex flex-col bg-zinc-100 dark:bg-zinc-950 p-3 rounded-xl min-w-[280px] max-h-[calc(100vh-172px)] font-sans ${
+        isDragging ? "opacity-50" : ""
+      }`}
     >
       <div
         {...attributes}
@@ -116,6 +120,11 @@ export default function List({ list }: { list: List }) {
       </div>
 
       <div className="flex-1 space-y-3 my-2 overflow-hidden overflow-y-auto">
+        {size > 0 && (
+          <p className="text-muted-foreground text-sm text-center">
+            {list.cards?.length} cards matches your filter
+          </p>
+        )}
         <SortableContext items={cardIds}>
           {list.cards?.map((card) => (
             <Card key={card.id} card={card} list={list} />

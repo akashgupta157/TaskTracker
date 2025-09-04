@@ -22,6 +22,7 @@ import {
   DialogTrigger,
   DialogContent,
 } from "./ui/dialog";
+import Filter from "./Filter";
 
 const formSchema = z.object({
   email: z
@@ -46,6 +47,8 @@ export default function Header({
   const { data: session } = useSession();
 
   const [open, setOpen] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(false);
+
   const [inviteLoading, setInviteLoading] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -134,20 +137,30 @@ export default function Header({
             </div>
 
             {/* Filter button */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="size-8 sm:size-9"
-                >
-                  <LuListFilter className="size-4 sm:size-5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Filter Cards</p>
-              </TooltipContent>
-            </Tooltip>
+            <Popover open={filterOpen} onOpenChange={setFilterOpen}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="size-8 sm:size-9"
+                    >
+                      <LuListFilter className="size-4 sm:size-5" />
+                    </Button>
+                  </PopoverTrigger>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Filter Cards</p>
+                </TooltipContent>
+              </Tooltip>
+              <PopoverContent className="">
+                <Filter
+                  currentBoard={currentBoard}
+                  setFilterOpen={setFilterOpen}
+                />
+              </PopoverContent>
+            </Popover>
 
             {/* Invite member dialog */}
             <Dialog open={open} onOpenChange={setOpen}>
@@ -189,10 +202,10 @@ export default function Header({
                                       autoComplete="off"
                                       className={
                                         field.value &&
-                                          (field.value.endsWith("@gmail.com") ||
-                                            field.value.endsWith(
-                                              "@googlemail.com"
-                                            ))
+                                        (field.value.endsWith("@gmail.com") ||
+                                          field.value.endsWith(
+                                            "@googlemail.com"
+                                          ))
                                           ? "border-green-500"
                                           : ""
                                       }
