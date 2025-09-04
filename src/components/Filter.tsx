@@ -6,6 +6,7 @@ import { Button } from "./ui/button";
 import { Checkbox } from "./ui/checkbox";
 import { LuFilter } from "react-icons/lu";
 import { useDispatch } from "react-redux";
+import { getAllParams } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { AppDispatch } from "@/redux/store";
 import { CardFilters } from "@/types/CardFilter";
@@ -32,52 +33,7 @@ export default function Filter({
   const [filters, setFilters] = useState<CardFilters>({});
 
   useEffect(() => {
-    const params = new URLSearchParams(searchParams.toString());
-    const initialFilters: CardFilters = {};
-
-    if (params.has("isCompleted")) {
-      initialFilters.isCompleted = params.get("isCompleted") === "true";
-    }
-
-    if (params.has("priority")) {
-      const priorities = params
-        .getAll("priority")
-        .filter((p): p is "LOW" | "MEDIUM" | "HIGH" =>
-          ["LOW", "MEDIUM", "HIGH"].includes(p)
-        );
-      if (priorities.length > 0) {
-        initialFilters.priority = priorities;
-      }
-    }
-
-    if (params.has("assigneeId")) {
-      const assignees = params.getAll("assigneeId");
-      if (assignees.length > 0) {
-        initialFilters.assigneeId = assignees;
-      }
-    }
-
-    if (params.has("dueDate")) {
-      const dueDate = params.get("dueDate");
-      if (dueDate && ["today", "overdue", "upcoming"].includes(dueDate)) {
-        initialFilters.dueDate = dueDate as "today" | "overdue" | "upcoming";
-      }
-    }
-
-    if (params.has("search")) {
-      initialFilters.search = params.get("search") || "";
-    }
-
-    setFilters(initialFilters);
-
-    if (Object.keys(initialFilters).length > 0 && currentBoard?.id) {
-      dispatch(
-        filterBoard({
-          boardId: currentBoard.id,
-          filterData: initialFilters,
-        })
-      );
-    }
+    setFilters(getAllParams(searchParams));
   }, [searchParams, currentBoard?.id, dispatch]);
 
   const handleFilterChange = (

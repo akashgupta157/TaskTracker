@@ -3,6 +3,7 @@ import { twMerge } from "tailwind-merge";
 import { clsx, type ClassValue } from "clsx";
 import { AppError, Card, List } from "@/types";
 import { createClient } from "@supabase/supabase-js";
+import { ReadonlyURLSearchParams } from "next/navigation";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -121,3 +122,28 @@ export const uploadSupabase = async (file: File) => {
     return file.publicUrl;
   }
 };
+
+export function getAllParams(searchParams: ReadonlyURLSearchParams) {
+  const params: Record<string, string | string[]> = {};
+  const arrayParams = ["priority", "assigneeId"];
+
+  const standardSearchParams = new URLSearchParams(searchParams.toString());
+
+  for (const [key, value] of standardSearchParams.entries()) {
+    if (arrayParams.includes(key)) {
+      if (params[key]) {
+        if (Array.isArray(params[key])) {
+          (params[key] as string[]).push(value);
+        } else {
+          params[key] = [params[key] as string, value];
+        }
+      } else {
+        params[key] = [value];
+      }
+    } else {
+      params[key] = value;
+    }
+  }
+
+  return params;
+}

@@ -4,12 +4,13 @@ import type { List } from "@/types";
 import { Button } from "./ui/button";
 import CardDialog from "./CardDialog";
 import { CSS } from "@dnd-kit/utilities";
+import { Skeleton } from "./ui/skeleton";
 import { InlineEdit } from "./InlineEdit";
-import { useDispatch } from "react-redux";
-import { AppDispatch } from "@/redux/store";
 import React, { useMemo, useState } from "react";
 import { LuPlus, LuTrash2 } from "react-icons/lu";
 import { useSearchParams } from "next/navigation";
+import { AppDispatch, RootState } from "@/redux/store";
+import { useDispatch, useSelector } from "react-redux";
 import { modifyListTitle } from "@/redux/slices/boardSlice";
 import { SortableContext, useSortable } from "@dnd-kit/sortable";
 import { deleteList, updateListTitle } from "@/redux/slices/listSlice";
@@ -35,6 +36,7 @@ import {
 export default function List({ list }: { list: List }) {
   const { size } = useSearchParams();
   const dispatch = useDispatch<AppDispatch>();
+  const { filterLoading } = useSelector((state: RootState) => state.board);
 
   const [open, setOpen] = useState(false);
   const [listTitle, setListTitle] = useState(list.title);
@@ -71,6 +73,14 @@ export default function List({ list }: { list: List }) {
       toast.error("Failed to delete list.");
     }
   };
+
+  const CardSkeleton = () => (
+    <div className="bg-white dark:bg-zinc-900 shadow mb-3 p-3 rounded-lg">
+      <Skeleton className="mb-2 w-3/4 h-4" />
+      <Skeleton className="w-1/2 h-3" />
+    </div>
+  );
+
   return (
     <div
       ref={setNodeRef}
@@ -120,16 +130,26 @@ export default function List({ list }: { list: List }) {
       </div>
 
       <div className="flex-1 space-y-3 my-2 overflow-hidden overflow-y-auto">
-        {size > 0 && (
-          <p className="text-muted-foreground text-sm text-center">
-            {list.cards?.length} cards matches your filter
-          </p>
+        {filterLoading ? (
+          <>
+            <CardSkeleton />
+            <CardSkeleton />
+            <CardSkeleton />
+          </>
+        ) : (
+          <>
+            {size > 0 && (
+              <p className="text-muted-foreground text-sm text-center">
+                {list.cards?.length} cards matches your filter
+              </p>
+            )}
+            <SortableContext items={cardIds}>
+              {list.cards?.map((card) => (
+                <Card key={card.id} card={card} list={list} />
+              ))}
+            </SortableContext>
+          </>
         )}
-        <SortableContext items={cardIds}>
-          {list.cards?.map((card) => (
-            <Card key={card.id} card={card} list={list} />
-          ))}
-        </SortableContext>
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>

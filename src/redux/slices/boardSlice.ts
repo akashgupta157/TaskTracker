@@ -16,6 +16,7 @@ const initialState: BoardState = {
   currentBoard: null,
   loading: false,
   error: null,
+  filterLoading: false,
 };
 
 export const getBoards = createAsyncThunk("board/getBoards", async () => {
@@ -204,6 +205,9 @@ const boardSlice = createSlice({
     clearError: (state) => {
       state.error = null;
     },
+    setBoardLoading: (state, action: PayloadAction<boolean>) => {
+      state.loading = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -260,6 +264,9 @@ const boardSlice = createSlice({
         state.loading = false;
         state.error = handleApiError(action.error);
       })
+      .addCase(filterBoard.pending, (state) => {
+        state.filterLoading = true;
+      })
       .addCase(
         filterBoard.fulfilled,
         (
@@ -267,11 +274,12 @@ const boardSlice = createSlice({
           action: PayloadAction<NonNullable<BoardState["currentBoard"]>>
         ) => {
           state.loading = false;
+          state.filterLoading = false;
           state.currentBoard = action.payload;
         }
       )
       .addCase(filterBoard.rejected, (state, action) => {
-        state.loading = false;
+        state.filterLoading = false;
         state.error = handleApiError(action.error);
       })
       .addCase(addNewList.fulfilled, (state, action: PayloadAction<List>) => {
@@ -356,4 +364,5 @@ export const {
   moveCard,
   modifyListTitle,
   clearError,
+  setBoardLoading,
 } = boardSlice.actions;
