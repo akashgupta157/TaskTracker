@@ -1,5 +1,5 @@
 import Image from "next/image";
-import CardDialog from "./CardDialog";
+import dynamic from "next/dynamic";
 import React, { useState } from "react";
 import { CSS } from "@dnd-kit/utilities";
 import { useDispatch } from "react-redux";
@@ -24,6 +24,10 @@ import {
   LuPaperclip,
   LuSquareCheck,
 } from "react-icons/lu";
+
+const CardDialog = dynamic(() => import("./CardDialog"), {
+  ssr: false,
+});
 
 export default function Card({ card, list }: { card: CardType; list: List }) {
   const dispatch = useDispatch<AppDispatch>();

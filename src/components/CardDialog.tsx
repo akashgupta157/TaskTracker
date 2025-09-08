@@ -1,6 +1,6 @@
 import { toast } from "sonner";
 import Image from "next/image";
-import RTEditor from "./RTEditor";
+import dynamic from "next/dynamic";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Loading } from "./Loading";
@@ -52,6 +52,10 @@ import {
   LuSquareCheckBig,
 } from "react-icons/lu";
 
+const RTEditor = dynamic(() => import("./RTEditor"), {
+  ssr: false,
+});
+
 const generateId = () =>
   `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
@@ -67,10 +71,7 @@ export default function CardDialog({
   setDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
   const dispatch = useDispatch<AppDispatch>();
-  const { currentBoard } = useSelector(
-    (state: RootState) => state.board
-  );
-
+  const { currentBoard } = useSelector((state: RootState) => state.board);
   const { cardLoading } = useSelector((state: RootState) => state.card);
 
   const [open, setOpen] = useState(false);
@@ -174,7 +175,8 @@ export default function CardDialog({
       } catch (error) {
         console.error("Upload error:", error);
         toast.error(
-          `Failed to upload file: ${error instanceof Error ? error.message : "Unknown error"
+          `Failed to upload file: ${
+            error instanceof Error ? error.message : "Unknown error"
           }`,
           { id: toastId }
         );
@@ -226,14 +228,10 @@ export default function CardDialog({
     }
     try {
       if (isNew) {
-        await dispatch(
-          addNewCard(cardDetails as Card)
-        );
+        await dispatch(addNewCard(cardDetails as Card));
         toast.success("Card created successfully");
       } else {
-        await dispatch(
-          reviseCard({ ...cardData, ...cardDetails } as Card)
-        );
+        await dispatch(reviseCard({ ...cardData, ...cardDetails } as Card));
         toast.success("Card updated successfully");
       }
       setDialogOpen(false);
@@ -402,7 +400,8 @@ export default function CardDialog({
                 </div>
               )}
               <span className="ml-1 text-muted-foreground text-sm">
-                {cardDetails.assignees.length} {cardDetails.assignees.length === 1 ? 'assignee' : 'assignees'}
+                {cardDetails.assignees.length}{" "}
+                {cardDetails.assignees.length === 1 ? "assignee" : "assignees"}
               </span>
             </div>
           )}
@@ -413,24 +412,26 @@ export default function CardDialog({
                 <div className="flex justify-between items-start">
                   <div className="flex items-center gap-2">
                     <div
-                      className={`p-2 rounded-full ${cardDetails.priority === "HIGH"
-                        ? "bg-red-100 text-red-600"
-                        : cardDetails.priority === "MEDIUM"
+                      className={`p-2 rounded-full ${
+                        cardDetails.priority === "HIGH"
+                          ? "bg-red-100 text-red-600"
+                          : cardDetails.priority === "MEDIUM"
                           ? "bg-yellow-100 text-yellow-600"
                           : "bg-green-100 text-green-600"
-                        }`}
+                      }`}
                     >
                       <LuArrowUpDown className="size-4" />
                     </div>
                     <div>
                       <p className="text-muted-foreground text-sm">Priority</p>
                       <p
-                        className={`font-semibold ${cardDetails.priority === "HIGH"
-                          ? "text-red-600"
-                          : cardDetails.priority === "MEDIUM"
+                        className={`font-semibold ${
+                          cardDetails.priority === "HIGH"
+                            ? "text-red-600"
+                            : cardDetails.priority === "MEDIUM"
                             ? "text-yellow-600"
                             : "text-green-600"
-                          }`}
+                        }`}
                       >
                         {cardDetails.priority}
                       </p>
@@ -500,12 +501,13 @@ export default function CardDialog({
                     <div
                       className="bg-green-500 h-full transition-all duration-300"
                       style={{
-                        width: `${(cardDetails.checklist.filter(
-                          (item) => item.isChecked
-                        ).length /
-                          cardDetails.checklist.length) *
+                        width: `${
+                          (cardDetails.checklist.filter(
+                            (item) => item.isChecked
+                          ).length /
+                            cardDetails.checklist.length) *
                           100
-                          }%`,
+                        }%`,
                       }}
                     ></div>
                   </div>
@@ -515,11 +517,12 @@ export default function CardDialog({
                   <div
                     className="bg-green-500 h-full transition-all duration-300"
                     style={{
-                      width: `${(cardDetails.checklist.filter((item) => item.isChecked)
-                        .length /
-                        cardDetails.checklist.length) *
+                      width: `${
+                        (cardDetails.checklist.filter((item) => item.isChecked)
+                          .length /
+                          cardDetails.checklist.length) *
                         100
-                        }%`,
+                      }%`,
                     }}
                   ></div>
                 </div>
@@ -622,8 +625,9 @@ const ChecklistItem = ({
     <InlineEdit
       value={item.title}
       onChange={(value) => onChange(item.id, "title", value)}
-      className={`flex-1 ${item.isChecked ? "line-through text-muted-foreground" : ""
-        }`}
+      className={`flex-1 ${
+        item.isChecked ? "line-through text-muted-foreground" : ""
+      }`}
     />
     <Button
       variant="ghost"

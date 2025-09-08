@@ -1,8 +1,8 @@
 import Card from "./Card";
 import { toast } from "sonner";
+import dynamic from "next/dynamic";
 import type { List } from "@/types";
 import { Button } from "./ui/button";
-import CardDialog from "./CardDialog";
 import { CSS } from "@dnd-kit/utilities";
 import { Skeleton } from "./ui/skeleton";
 import { InlineEdit } from "./InlineEdit";
@@ -32,6 +32,10 @@ import {
   AlertDialogTrigger,
   AlertDialogDescription,
 } from "./ui/alert-dialog";
+
+const CardDialog = dynamic(() => import("./CardDialog"), {
+  ssr: false,
+});
 
 export default function List({ list }: { list: List }) {
   const { size } = useSearchParams();
