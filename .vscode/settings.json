@@ -1,5 +1,4 @@
 {
-    "cSpell.words": [
-        "satoshi"
-    ]
+  "cSpell.words": ["satoshi"],
+  "prisma.pinToPrisma6": true
 }
