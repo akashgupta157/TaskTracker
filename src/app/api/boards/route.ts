@@ -14,33 +14,6 @@ export async function GET() {
           { members: { some: { userId: session.user.id } } },
         ],
       },
-      include: {
-        admin: true,
-        lists: {
-          orderBy: { position: "asc" },
-          include: {
-            cards: {
-              orderBy: { position: "asc" },
-              include: {
-                assignees: {
-                  include: {
-                    boardMember: {
-                      include: {
-                        user: true,
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-        members: {
-          include: {
-            user: true,
-          },
-        },
-      },
     });
 
     return NextResponse.json(boards);
