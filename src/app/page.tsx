@@ -15,7 +15,7 @@ export default function Home() {
 
   return (
     <div
-      className="bg-cover bg-center px-6 sm:px-10 md:px-20 w-screen max-w-screen h-screen max-h-screen font-satoshi"
+      className="bg-cover bg-center px-6 sm:px-10 md:px-20 w-screen max-w-screen h-screen max-h-screen overflow-hidden font-satoshi"
       style={{ backgroundImage: `url('/landing_bg.png')` }}
     >
       <div className="mx-auto max-w-[1300px]">
@@ -48,6 +48,13 @@ export default function Home() {
           >
             Get Started
           </button>
+          <Image
+            src="/dummy.png"
+            alt="illustration"
+            width={1000}
+            height={400}
+            className="mx-auto mt-8 sm:mt-12 rounded-2xl w-full max-w-[95%] sm:max-w-[85%] md:max-w-[900px] object-cover"
+          />
         </div>
       </div>
     </div>
