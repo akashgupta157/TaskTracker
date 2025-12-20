@@ -1,13 +1,10 @@
 import { AppError } from "@/types";
 import { Button } from "./ui/button";
-import { useDispatch } from "react-redux";
 import { useRouter } from "next/navigation";
-import { clearError } from "@/redux/slices/boardSlice";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 
 export const ErrorDisplay = ({ error }: { error: AppError | null }) => {
   const router = useRouter();
-  const dispatch = useDispatch();
 
   if (!error) return null;
 
@@ -30,11 +27,7 @@ export const ErrorDisplay = ({ error }: { error: AppError | null }) => {
             >
               Go to Home
             </Button>
-            <Button
-              variant="destructive"
-              onClick={() => dispatch(clearError())}
-              className=""
-            >
+            <Button variant="destructive" className="">
               Try again
             </Button>
           </div>

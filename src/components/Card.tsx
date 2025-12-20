@@ -1,13 +1,14 @@
+"use client";
+
 import Image from "next/image";
 import dynamic from "next/dynamic";
 import React, { useState } from "react";
 import { CSS } from "@dnd-kit/utilities";
 import { useDispatch } from "react-redux";
-import { AppDispatch } from "@/redux/store";
 import { useSortable } from "@dnd-kit/sortable";
 import type { Card as CardType, List } from "@/types";
-import { toggleCard } from "@/redux/slices/cardSlice";
 import { toggleCardIsComplete } from "@/redux/slices/boardSlice";
+import { useToggleCardCompleteMutation } from "@/redux/api/cardApi";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 import {
   Dialog,
@@ -30,8 +31,10 @@ const CardDialog = dynamic(() => import("./CardDialog"), {
 });
 
 export default function Card({ card, list }: { card: CardType; list: List }) {
-  const dispatch = useDispatch<AppDispatch>();
+  const dispatch = useDispatch();
   const [open, setOpen] = useState(false);
+
+  const [toggleComplete] = useToggleCardCompleteMutation();
 
   const {
     attributes,
@@ -54,18 +57,23 @@ export default function Card({ card, list }: { card: CardType; list: List }) {
     transform: CSS.Translate.toString(transform),
   };
 
-  const dueDate = new Date(card.dueDate || "");
-  const istNow = new Date(
+  const dueDate = card.dueDate ? new Date(card.dueDate) : null;
+  const now = new Date(
     new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
   );
-  const isPast = dueDate.getTime() < istNow.getTime();
-  const isCurrentYear = dueDate.getFullYear() === istNow.getFullYear();
 
-  const handleToggleComplete = (e: React.MouseEvent) => {
+  const isPast = dueDate ? dueDate.getTime() < now.getTime() : false;
+  const isCurrentYear = dueDate?.getFullYear() === now.getFullYear();
+
+  const handleToggleComplete = async (e: React.MouseEvent<HTMLDivElement>) => {
     e.stopPropagation();
-    if (!card.id) return;
+    if (!card.id || !card.boardId) return;
     dispatch(toggleCardIsComplete({ cardId: card.id }));
-    dispatch(toggleCard(card.id));
+    try {
+      await toggleComplete(card.id).unwrap();
+    } catch {
+      // dispatch(toggleCardIsComplete({ cardId: card.id }));
+    }
   };
 
   return (
@@ -82,13 +90,13 @@ export default function Card({ card, list }: { card: CardType; list: List }) {
           }`}
         >
           {(card.description && card.description !== "<p></p>") ||
-          (card.checklist && card.checklist.length > 0) ||
-          (card.attachments && card.attachments.length > 0) ||
+          card.checklist?.length ||
+          card.attachments?.length ||
           card.priority ? (
             <div className="flex items-center gap-2">
               {card.priority && (
                 <span
-                  className={`text-xs px-3 rounded w-fit text-card font-semibold ${
+                  className={`text-xs px-3 rounded font-semibold text-card ${
                     card.priority === "HIGH"
                       ? "bg-red-500"
                       : card.priority === "MEDIUM"
@@ -102,7 +110,7 @@ export default function Card({ card, list }: { card: CardType; list: List }) {
 
               {card.description && card.description !== "<p></p>" && (
                 <Tooltip>
-                  <TooltipTrigger className="cursor-pointer">
+                  <TooltipTrigger>
                     <LuText />
                   </TooltipTrigger>
                   <TooltipContent>
@@ -111,33 +119,32 @@ export default function Card({ card, list }: { card: CardType; list: List }) {
                 </Tooltip>
               )}
 
-              {card.checklist && card.checklist.length > 0 && (
+              {card.checklist?.length ? (
                 <Tooltip>
-                  <TooltipTrigger className="cursor-pointer">
+                  <TooltipTrigger>
                     <LuSquareCheck />
                   </TooltipTrigger>
                   <TooltipContent>
                     <p>This card has a checklist</p>
                   </TooltipContent>
                 </Tooltip>
-              )}
+              ) : null}
 
-              {Array.isArray(card.attachments) &&
-                card.attachments.length > 0 && (
-                  <Tooltip>
-                    <TooltipTrigger className="flex items-center gap-1 cursor-pointer">
-                      <LuPaperclip />{" "}
-                      <span className="text-xs">{card.attachments.length}</span>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>This card has {card.attachments.length} attachments</p>
-                    </TooltipContent>
-                  </Tooltip>
-                )}
+              {card.attachments?.length ? (
+                <Tooltip>
+                  <TooltipTrigger className="flex items-center gap-1">
+                    <LuPaperclip />
+                    <span className="text-xs">{card.attachments.length}</span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>This card has {card.attachments.length} attachments</p>
+                  </TooltipContent>
+                </Tooltip>
+              ) : null}
             </div>
           ) : null}
 
-          <div className="flex flex-row items-start gap-2">
+          <div className="flex items-start gap-2">
             <Tooltip>
               <TooltipTrigger asChild>
                 <div
@@ -164,16 +171,17 @@ export default function Card({ card, list }: { card: CardType; list: List }) {
                 <p>{card.isCompleted ? "Mark incomplete" : "Mark completed"}</p>
               </TooltipContent>
             </Tooltip>
+
             <p className="text-sm break-words line-clamp-100">{card.title}</p>
           </div>
 
-          {card.dueDate || (card.assignees && card.assignees.length > 0) ? (
+          {dueDate || card.assignees?.length ? (
             <div
-              className={`flex  ${
+              className={`flex ${
                 card.dueDate ? "justify-between" : "justify-end"
               } items-center gap-2`}
             >
-              {card.dueDate && (
+              {dueDate && (
                 <span
                   className={`flex items-center gap-1.5 text-muted-foreground ${
                     isPast && "bg-[#5c1e1a] px-1 rounded"
@@ -190,30 +198,31 @@ export default function Card({ card, list }: { card: CardType; list: List }) {
                 </span>
               )}
 
-              {card.assignees && card.assignees.length > 0 && (
+              {card.assignees?.length ? (
                 <div className="flex items-center -space-x-2">
-                  {card.assignees.map((assignee, index) => (
-                    <Tooltip key={index}>
+                  {card.assignees.map((a, i) => (
+                    <Tooltip key={i}>
                       <TooltipTrigger className="cursor-pointer">
                         <Image
-                          src={assignee.boardMember.user.image || "/logo.png"}
-                          alt={assignee.boardMember.user.name || "user"}
+                          src={a.boardMember.user.image || "/logo.png"}
+                          alt={a.boardMember.user.name || "user"}
                           width={24}
                           height={24}
                           className="border rounded-full"
                         />
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>{assignee.boardMember.user.name}</p>
+                        <p>{a.boardMember.user.name}</p>
                       </TooltipContent>
                     </Tooltip>
                   ))}
                 </div>
-              )}
+              ) : null}
             </div>
           ) : null}
         </div>
       </DialogTrigger>
+
       <DialogContent className="max-w-2xl sm:max-w-4xl">
         <DialogHeader>
           <DialogTitle />

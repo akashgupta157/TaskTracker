@@ -2,52 +2,63 @@
 
 import React, { useEffect } from "react";
 import Header from "@/components/Header";
+import { useDispatch } from "react-redux";
+import { RootState } from "@/redux/store";
+import { useSelector } from "react-redux";
 import { getAllParams } from "@/lib/utils";
-import { useDispatch, useSelector } from "react-redux";
-import { AppDispatch, RootState } from "@/redux/store";
 import ListContainer from "@/components/ListContainer";
 import { useBoardSubscriptions } from "@/lib/realtime";
+import { setCurrentBoard } from "@/redux/slices/boardSlice";
 import { usePathname, useSearchParams } from "next/navigation";
 import {
-  filterBoard,
-  getBoardDetails,
-  setBoardLoading,
-} from "@/redux/slices/boardSlice";
+  useGetBoardByIdQuery,
+  useFilterBoardQuery,
+} from "@/redux/api/boardApi";
 
 export default function Board() {
-  const dispatch = useDispatch<AppDispatch>();
-  const { currentBoard, loading } = useSelector(
-    (state: RootState) => state.board
-  );
+  const dispatch = useDispatch();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const pathName = usePathname();
-  const id = pathName.split("/").pop();
+  const currentBoard = useSelector(
+    (state: RootState) => state.board.currentBoard
+  );
 
-  useBoardSubscriptions(id as string);
+  const boardId = pathname.split("/").pop() as string;
+  const filters = getAllParams(searchParams);
+  const isFiltering = searchParams.size > 0;
+
+  const filteredResult = useFilterBoardQuery({ boardId, filterData: filters });
+  const unfilteredResult = useGetBoardByIdQuery(boardId);
+
+  const {
+    data: board,
+    isLoading,
+    isFetching,
+  } = isFiltering ? filteredResult : unfilteredResult;
+
+  const isFilterLoading = isFiltering && isFetching;
 
   useEffect(() => {
-    if (!id) return;
-    if (!currentBoard || currentBoard.id !== id) {
-      if (searchParams.size > 0) {
-        dispatch(setBoardLoading(true));
-        dispatch(
-          filterBoard({ boardId: id, filterData: getAllParams(searchParams) })
-        );
-      } else {
-        dispatch(getBoardDetails(id));
-      }
+    if (board) {
+      dispatch(setCurrentBoard(board));
     }
-  }, [id, currentBoard, dispatch, searchParams]);
+  }, [board, dispatch]);
+
+  useBoardSubscriptions(boardId);
 
   return (
     <div
       className={`flex-1 flex flex-col font-sans ${currentBoard?.background}`}
     >
-      <Header currentBoard={currentBoard} loading={loading} />
+      <Header currentBoard={currentBoard} loading={isLoading} />
 
       <div className="flex-1 overflow-x-auto">
-        <ListContainer currentBoard={currentBoard} loading={loading} />
+        <ListContainer
+          currentBoard={currentBoard || board}
+          loading={isLoading}
+          isFilterLoading={isFilterLoading}
+        />
       </div>
     </div>
   );

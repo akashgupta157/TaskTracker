@@ -6,14 +6,16 @@ import { Button } from "./ui/button";
 import { CSS } from "@dnd-kit/utilities";
 import { Skeleton } from "./ui/skeleton";
 import { InlineEdit } from "./InlineEdit";
+import { useDispatch } from "react-redux";
 import React, { useMemo, useState } from "react";
 import { LuPlus, LuTrash2 } from "react-icons/lu";
 import { useSearchParams } from "next/navigation";
-import { AppDispatch, RootState } from "@/redux/store";
-import { useDispatch, useSelector } from "react-redux";
-import { modifyListTitle } from "@/redux/slices/boardSlice";
+import { deleteList, modifyListTitle } from "@/redux/slices/boardSlice";
 import { SortableContext, useSortable } from "@dnd-kit/sortable";
-import { deleteList, updateListTitle } from "@/redux/slices/listSlice";
+import {
+  useUpdateListTitleMutation,
+  useDeleteListMutation,
+} from "@/redux/api/listApi";
 import {
   Dialog,
   DialogContent,
@@ -37,17 +39,26 @@ const CardDialog = dynamic(() => import("./CardDialog"), {
   ssr: false,
 });
 
-export default function List({ list }: { list: List }) {
+export default function List({
+  list,
+  isFilterLoading,
+}: {
+  list: List;
+  isFilterLoading: boolean;
+}) {
   const { size } = useSearchParams();
-  const dispatch = useDispatch<AppDispatch>();
-  const { filterLoading } = useSelector((state: RootState) => state.board);
+  const dispatch = useDispatch();
+
+  const [updateListTitleMutation] = useUpdateListTitleMutation();
+  const [deleteListMutation] = useDeleteListMutation();
 
   const [open, setOpen] = useState(false);
   const [listTitle, setListTitle] = useState(list.title);
 
-  const cardIds = useMemo(() => {
-    return list.cards?.map((card) => card.id as string) || [];
-  }, [list.cards]);
+  const cardIds = useMemo(
+    () => list.cards?.map((card) => card.id) || [],
+    [list.cards]
+  );
 
   const {
     attributes,
@@ -66,15 +77,24 @@ export default function List({ list }: { list: List }) {
   const handleTitleChange = () => {
     if (listTitle === list.title) return;
     dispatch(modifyListTitle({ listId: list.id, title: listTitle }));
-    dispatch(updateListTitle({ listId: list.id, title: listTitle }));
+    updateListTitleMutation({
+      listId: list.id,
+      boardId: list.boardId,
+      title: listTitle,
+    });
   };
+
   const handleDelete = async () => {
+    const toastId = toast.loading("Deleting list...");
     try {
-      const toastId = toast.loading("Deleting list...");
-      await dispatch(deleteList(list.id as string));
+      await deleteListMutation({
+        listId: list.id,
+        boardId: list.boardId,
+      }).unwrap();
+      dispatch(deleteList({ listId: list.id }));
       toast.success("List deleted successfully!", { id: toastId });
-    } catch (error) {
-      toast.error("Failed to delete list.");
+    } catch {
+      toast.error("Failed to delete list.", { id: toastId });
     }
   };
 
@@ -89,22 +109,20 @@ export default function List({ list }: { list: List }) {
     <div
       ref={setNodeRef}
       style={style}
-      data-list-id={list.id}
-      data-type="List"
-      className={`flex flex-col bg-zinc-100 dark:bg-zinc-950 p-3 rounded-xl min-w-[280px] max-h-[calc(100vh-172px)] font-sans ${
+      className={`flex flex-col bg-zinc-100 dark:bg-zinc-950 p-3 rounded-xl min-w-[280px] max-h-[calc(100vh-172px)] ${
         isDragging ? "opacity-50" : ""
       }`}
     >
       <div
         {...attributes}
         {...listeners}
-        className="flex justify-between items-center cursor-grab active:cursor-grabbing"
+        className="flex justify-between items-center cursor-grab"
       >
         <InlineEdit
           value={listTitle}
           onChange={setListTitle}
           onCommit={handleTitleChange}
-          className="px-2 font-bold cursor-pointer"
+          className="px-2 font-bold"
         />
         <AlertDialog>
           <AlertDialogTrigger asChild>
@@ -116,14 +134,13 @@ export default function List({ list }: { list: List }) {
             <AlertDialogHeader>
               <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
               <AlertDialogDescription>
-                This action cannot be undone. This will permanently delete this
-                list and cards within it from your board.
+                This will permanently delete this list and its cards.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction
-                className="bg-destructive hover:bg-destructive/80"
+                className="bg-destructive"
                 onClick={handleDelete}
               >
                 Delete
@@ -134,7 +151,7 @@ export default function List({ list }: { list: List }) {
       </div>
 
       <div className="flex-1 space-y-3 my-2 overflow-hidden overflow-y-auto">
-        {filterLoading ? (
+        {isFilterLoading ? (
           <>
             <CardSkeleton />
             <CardSkeleton />
@@ -165,7 +182,7 @@ export default function List({ list }: { list: List }) {
         <DialogContent className="sm:max-w-4xl">
           <DialogHeader>
             <DialogTitle />
-            <CardDialog list={list} isNew={true} setDialogOpen={setOpen} />
+            <CardDialog list={list} isNew setDialogOpen={setOpen} />
           </DialogHeader>
         </DialogContent>
       </Dialog>

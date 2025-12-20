@@ -1,21 +1,20 @@
 "use client";
 
 import { z } from "zod";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
+import { useDispatch } from "react-redux";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import React, { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { AppDispatch, RootState } from "@/redux/store";
-import { useSelector, useDispatch } from "react-redux";
+import { setCurrentBoard } from "@/redux/slices/boardSlice";
 import {
-  addNewBoard,
-  getBoardDetails,
-  getBoards,
-} from "@/redux/slices/boardSlice";
+  useGetBoardsQuery,
+  useCreateBoardMutation,
+} from "@/redux/api/boardApi";
 import {
   Popover,
   PopoverContent,
@@ -31,9 +30,12 @@ type BoardFormData = z.infer<typeof boardSchema>;
 
 export default function Dashboard() {
   const router = useRouter();
+  const dispatch = useDispatch();
   const [open, setOpen] = useState(false);
-  const dispatch = useDispatch<AppDispatch>();
-  const { boards, loading } = useSelector((state: RootState) => state.board);
+
+  const { data: boards = [], isLoading } = useGetBoardsQuery();
+  const [createBoard, { isLoading: isCreating }] = useCreateBoardMutation();
+
   const {
     register,
     handleSubmit,
@@ -43,15 +45,15 @@ export default function Dashboard() {
     resolver: zodResolver(boardSchema),
   });
 
-  useEffect(() => {
-    dispatch(getBoards());
-  }, [dispatch]);
-
   const onSubmit = async (data: BoardFormData) => {
-    const { payload: id } = await dispatch(addNewBoard(data));
-    router.push(`/board/${id.id}`);
-    reset();
-    setOpen(false);
+    try {
+      const board = await createBoard(data).unwrap();
+      reset();
+      setOpen(false);
+      router.push(`/board/${board.id}`);
+    } catch (error) {
+      console.error("Failed to create board", error);
+    }
   };
 
   return (
@@ -67,49 +69,40 @@ export default function Dashboard() {
               Create New Board
             </button>
           </PopoverTrigger>
+
           <PopoverContent>
             <form onSubmit={handleSubmit(onSubmit)}>
               <div className="space-y-4 sm:space-y-5 font-sans">
                 <h3 className="font-bold text-lg sm:text-xl text-center">
                   Create New Board
                 </h3>
+
                 <div className="space-y-2">
-                  <Label htmlFor="boardTitle" className="text-sm sm:text-base">
+                  <Label htmlFor="boardTitle">
                     Board Title <span className="text-red-500">*</span>
                   </Label>
-                  <Input
-                    id="boardTitle"
-                    {...register("title")}
-                    className="text-sm sm:text-base"
-                  />
+                  <Input id="boardTitle" {...register("title")} />
                   {errors.title && (
-                    <p className="text-red-500 text-xs sm:text-sm">
+                    <p className="text-red-500 text-xs">
                       {errors.title.message}
                     </p>
                   )}
                 </div>
+
                 <div className="space-y-2">
-                  <Label htmlFor="description" className="text-sm sm:text-base">
-                    Description
-                  </Label>
-                  <Input
-                    id="description"
-                    {...register("description")}
-                    className="text-sm sm:text-base"
-                  />
+                  <Label htmlFor="description">Description</Label>
+                  <Input id="description" {...register("description")} />
                 </div>
-                <Button
-                  type="submit"
-                  className="py-2 sm:py-2.5 w-full text-sm sm:text-base"
-                >
-                  Create Board
+
+                <Button type="submit" disabled={isCreating} className="w-full">
+                  {isCreating ? "Creating..." : "Create Board"}
                 </Button>
               </div>
             </form>
           </PopoverContent>
         </Popover>
 
-        {loading
+        {isLoading
           ? Array.from({ length: 3 }).map((_, i) => (
               <Skeleton key={i} className="rounded-xl w-full h-28 sm:h-32" />
             ))
@@ -117,13 +110,12 @@ export default function Dashboard() {
               <div
                 key={board.id}
                 onClick={() => {
-                  dispatch(getBoardDetails(board.id));
-
+                  dispatch(setCurrentBoard(board));
                   router.push(`/board/${board.id}`);
                 }}
-                className={`rounded-xl w-full h-28 sm:h-32 relative shadow-xl dark:[box-shadow:0_0_20px_0_rgba(80,80,80,0.30)] cursor-pointer ${board.background}`}
+                className={`rounded-xl w-full h-28 sm:h-32 relative shadow-xl cursor-pointer ${board.background}`}
               >
-                <p className="bottom-0 absolute bg-background px-3 sm:px-5 py-1.5 rounded-b-xl w-full text-sm sm:text-base">
+                <p className="bottom-0 absolute bg-background px-3 py-1.5 rounded-b-xl w-full">
                   {board.title}
                 </p>
               </div>

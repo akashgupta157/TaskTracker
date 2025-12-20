@@ -7,18 +7,22 @@ import { Loading } from "./Loading";
 import { Button } from "./ui/button";
 import { formatDate } from "date-fns";
 import { Checkbox } from "./ui/checkbox";
-import { useSelector } from "react-redux";
-import { useDispatch } from "react-redux";
 import { InlineEdit } from "./InlineEdit";
+import { RootState } from "@/redux/store";
 import { Separator } from "./ui/separator";
 import { uploadSupabase } from "@/lib/utils";
 import { BoardMember, Card, List } from "@/types";
 import React, { useState, useCallback } from "react";
-import { AppDispatch, RootState } from "@/redux/store";
+import { useSelector, useDispatch } from "react-redux";
 import { DateTimePickerForm } from "./DateTimePickerForm";
+import { addCard, modifyCard, removeCard } from "@/redux/slices/boardSlice";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
-import { addNewCard, deleteCard, reviseCard } from "@/redux/slices/cardSlice";
+import {
+  useCreateCardMutation,
+  useUpdateCardMutation,
+  useDeleteCardMutation,
+} from "@/redux/api/cardApi";
 import {
   Select,
   SelectItem,
@@ -70,9 +74,14 @@ export default function CardDialog({
   cardData?: Card;
   setDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
-  const dispatch = useDispatch<AppDispatch>();
+  const dispatch = useDispatch();
   const { currentBoard } = useSelector((state: RootState) => state.board);
-  const { cardLoading } = useSelector((state: RootState) => state.card);
+
+  const [createCard, { isLoading: creating }] = useCreateCardMutation();
+  const [updateCard, { isLoading: updating }] = useUpdateCardMutation();
+  const [deleteCard, { isLoading: deleting }] = useDeleteCardMutation();
+
+  const cardLoading = creating || updating || deleting;
 
   const [open, setOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -228,29 +237,48 @@ export default function CardDialog({
     }
     try {
       if (isNew) {
-        await dispatch(addNewCard(cardDetails as Card));
+        await createCard(cardDetails as Card)
+          .unwrap()
+          .then((data) => dispatch(addCard(data)));
         toast.success("Card created successfully");
       } else {
-        await dispatch(reviseCard({ ...cardData, ...cardDetails } as Card));
+        await updateCard({
+          ...cardData,
+          ...cardDetails,
+        } as Card)
+          .unwrap()
+          .then((data) => dispatch(modifyCard(data)));
         toast.success("Card updated successfully");
       }
       setDialogOpen(false);
     } catch (error) {
       toast.error("Failed to save card");
     }
-  }, [cardDetails, cardData, currentBoard, isNew, dispatch, setDialogOpen]);
+  }, [
+    cardDetails,
+    cardData,
+    isNew,
+    setDialogOpen,
+    createCard,
+    updateCard,
+    dispatch,
+  ]);
 
   const handleDelete = useCallback(async () => {
     if (!cardData) return;
 
     try {
       setDialogOpen(false);
-      await dispatch(deleteCard(cardData.id as string));
+      await deleteCard({
+        cardId: cardData.id,
+        boardId: currentBoard?.id,
+      }).unwrap();
+      dispatch(removeCard({ cardId: cardData.id }));
       toast.success("Card deleted successfully");
     } catch (error) {
       toast.error("Failed to delete card");
     }
-  }, [cardData, dispatch, setDialogOpen]);
+  }, [cardData, setDialogOpen, currentBoard?.id, deleteCard, dispatch]);
 
   return (
     <>

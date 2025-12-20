@@ -15,11 +15,7 @@ export interface AppError {
 }
 
 export type BoardState = {
-  boards: Board[];
   currentBoard: (Board & { lists: (List & { cards: Card[] })[] }) | null;
-  loading: boolean;
-  error: AppError | null;
-  filterLoading: boolean;
 };
 
 export type Board = {

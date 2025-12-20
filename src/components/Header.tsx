@@ -1,5 +1,5 @@
 import { z } from "zod";
-import axios from "axios";
+import Filter from "./Filter";
 import { toast } from "sonner";
 import Image from "next/image";
 import { Board } from "@/types";
@@ -11,6 +11,7 @@ import { useForm } from "react-hook-form";
 import { Separator } from "./ui/separator";
 import { useSession } from "next-auth/react";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useInviteBoardMemberMutation } from "@/redux/api/boardApi";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 import { LuCheck, LuListFilter, LuUserRoundPlus } from "react-icons/lu";
@@ -22,7 +23,6 @@ import {
   DialogTrigger,
   DialogContent,
 } from "./ui/dialog";
-import Filter from "./Filter";
 
 const formSchema = z.object({
   email: z
@@ -49,7 +49,8 @@ export default function Header({
   const [open, setOpen] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
 
-  const [inviteLoading, setInviteLoading] = useState(false);
+  const [inviteBoardMember, { isLoading: inviteLoading }] =
+    useInviteBoardMemberMutation();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -60,23 +61,28 @@ export default function Header({
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     if (!currentBoard?.id) return;
-    setInviteLoading(true);
+
     try {
-      const { data } = await axios.post(
-        "/api/boards/" + currentBoard?.id + "/invite",
-        values
-      );
-      setOpen(false);
-      toast.success(data.message);
+      const res = await inviteBoardMember({
+        boardId: currentBoard.id,
+        email: values.email,
+      }).unwrap();
+
+      toast.success(res.message);
       form.reset();
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        toast.error(error.response?.data.message);
-      }
-    } finally {
-      setInviteLoading(false);
+      setOpen(false);
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Object &&
+        "data" in error &&
+        error.data instanceof Object &&
+        "message" in error.data
+          ? (error.data.message as string)
+          : "Failed to send invite";
+      toast.error(errorMessage);
     }
   }
+
   return (
     <div className="flex flex-wrap justify-between items-center gap-3 bg-white/90 dark:bg-black/20 p-3 sm:p-4 md:px-6 lg:px-10 font-sans">
       {loading ? (
