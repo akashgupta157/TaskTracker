@@ -25,14 +25,14 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   const session = (await getServerSession(authOptions)) as Session;
-  const { title, description } = await request.json();
+  const { title, background } = await request.json();
   try {
     const board = await prisma.board.create({
       data: {
         title,
-        description: description || "",
+        description: "",
         adminId: session.user.id,
-        background: "bg-gradient-to-br from-slate-800 to-sky-900",
+        background,
         lists: {
           create: [
             {

@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import React, { useState } from "react";
+import { LuCheck } from "react-icons/lu";
 import { useForm } from "react-hook-form";
 import { useDispatch } from "react-redux";
 import { useRouter } from "next/navigation";
@@ -23,15 +24,24 @@ import {
 
 const boardSchema = z.object({
   title: z.string().min(1, "Board name is required"),
-  description: z.string(),
 });
 
 type BoardFormData = z.infer<typeof boardSchema>;
+
+const colorOptions = [
+  "bg-gradient-to-br from-sky-500 to-indigo-600",
+  "bg-gradient-to-br from-pink-500 to-yellow-500",
+  "bg-gradient-to-br from-green-400 to-blue-500",
+  "bg-gradient-to-br from-purple-500 to-pink-500",
+  "bg-gradient-to-br from-orange-500 to-red-600",
+  "bg-gradient-to-br from-slate-800 to-sky-900",
+];
 
 export default function Dashboard() {
   const router = useRouter();
   const dispatch = useDispatch();
   const [open, setOpen] = useState(false);
+  const [selectedColor, setSelectedColor] = useState(colorOptions[0]);
 
   const { data: boards = [], isLoading } = useGetBoardsQuery();
   const [createBoard, { isLoading: isCreating }] = useCreateBoardMutation();
@@ -47,7 +57,10 @@ export default function Dashboard() {
 
   const onSubmit = async (data: BoardFormData) => {
     try {
-      const board = await createBoard(data).unwrap();
+      const board = await createBoard({
+        ...data,
+        background: selectedColor,
+      }).unwrap();
       reset();
       setOpen(false);
       router.push(`/board/${board.id}`);
@@ -90,11 +103,46 @@ export default function Dashboard() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="description">Description</Label>
-                  <Input id="description" {...register("description")} />
+                  <Label>Background Color</Label>
+
+                  <ul className="gap-2 grid grid-cols-3">
+                    {colorOptions.map((color) => {
+                      const isSelected = selectedColor === color;
+
+                      return (
+                        <li key={color}>
+                          <div
+                            role="radio"
+                            aria-checked={isSelected}
+                            tabIndex={0}
+                            onClick={() => setSelectedColor(color)}
+                            className={`
+                              relative h-12 w-full rounded cursor-pointer
+                              ${color}
+                              transition
+                              hover:brightness-110
+                              focus:outline-none
+                              ${isSelected ? "ring-2 ring-white" : ""}
+                            `}
+                          >
+                            {isSelected && (
+                              <span className="absolute inset-0 flex justify-center items-center">
+                                <LuCheck className="w-5 h-5 text-white" />
+                              </span>
+                            )}
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
                 </div>
 
-                <Button type="submit" disabled={isCreating} className="w-full">
+                <Button
+                  type="submit"
+                  disabled={isCreating}
+                  className="w-full"
+                  onSubmit={handleSubmit(onSubmit)}
+                >
                   {isCreating ? "Creating..." : "Create Board"}
                 </Button>
               </div>

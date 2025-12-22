@@ -183,8 +183,8 @@ export default function Card({ card, list }: { card: CardType; list: List }) {
             >
               {dueDate && (
                 <span
-                  className={`flex items-center gap-1.5 text-muted-foreground ${
-                    isPast && "bg-[#5c1e1a] px-1 rounded"
+                  className={`flex items-center gap-1.5 text-white ${
+                    isPast && "bg-[#8c1a11] px-1 rounded dark:bg-[#641e16]"
                   }`}
                 >
                   <LuClock />

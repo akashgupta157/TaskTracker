@@ -27,7 +27,7 @@ export const boardApi = baseApi.injectEndpoints({
 
     createBoard: builder.mutation<
       Board,
-      { title: string; description: string }
+      { title: string; background: string }
     >({
       query: (body) => ({
         url: "/boards",
