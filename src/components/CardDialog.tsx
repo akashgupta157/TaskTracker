@@ -12,7 +12,7 @@ import { RootState } from "@/redux/store";
 import { Separator } from "./ui/separator";
 import { uploadSupabase } from "@/lib/utils";
 import { BoardMember, Card, List } from "@/types";
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { DateTimePickerForm } from "./DateTimePickerForm";
 import { addCard, modifyCard, removeCard } from "@/redux/slices/boardSlice";
@@ -103,13 +103,15 @@ export default function CardDialog({
     boardId: currentBoard?.id,
   });
 
-  const [boardMember, setBoardMember] = useState(
-    currentBoard?.members.filter(
-      (member) =>
-        !cardDetails.assignees
-          .map((assignee) => assignee.userId)
-          .includes(member.userId)
-    ) || []
+  const boardMember = useMemo(
+    () =>
+      currentBoard?.members.filter(
+        (member) =>
+          !cardDetails.assignees
+            .map((assignee) => assignee.userId)
+            .includes(member.userId)
+      ) || [],
+    [currentBoard?.members, cardDetails.assignees]
   );
 
   const handleChange = useCallback(
@@ -216,15 +218,11 @@ export default function CardDialog({
             (assignee) => assignee.userId !== boardMember.userId
           ),
         }));
-        setBoardMember((prev) => [...prev, boardMember]);
       } else {
         setCardDetails((prev) => ({
           ...prev,
           assignees: [...prev.assignees, boardMember],
         }));
-        setBoardMember((prev) =>
-          prev.filter((member) => member.userId !== boardMember.userId)
-        );
       }
     },
     [cardDetails.assignees]
@@ -863,7 +861,7 @@ const SidebarActions = ({
                   >
                     <div className="flex items-center gap-2">
                       <Image
-                        src={member?.user?.image || "/public/logo.png"}
+                        src={member?.user?.image || "/logo.png"}
                         alt={member?.user?.name || ""}
                         width={25}
                         height={25}
@@ -892,7 +890,7 @@ const SidebarActions = ({
                     onClick={() => handleAssigneeChange(member)}
                   >
                     <Image
-                      src={member?.user?.image || "/public/logo.png"}
+                      src={member?.user?.image || "/logo.png"}
                       alt={member?.user?.name || ""}
                       width={25}
                       height={25}

@@ -14,6 +14,13 @@ export async function GET() {
           { members: { some: { userId: session.user.id } } },
         ],
       },
+      select: {
+        id: true,
+        title: true,
+        background: true,
+        createdAt: true,
+        adminId: true,
+      },
     });
 
     return NextResponse.json(boards);

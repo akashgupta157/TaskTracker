@@ -9,9 +9,11 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export const normalizePositions = (items: List[] | Card[]): void => {
-  items.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
-  items.forEach((item, index) => {
+export const normalizePositions = <T extends { position?: number }>(
+  items: T[]
+): void => {
+  const sorted = [...items].sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+  sorted.forEach((item, index) => {
     item.position = index;
   });
 };

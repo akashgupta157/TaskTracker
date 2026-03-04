@@ -12,20 +12,20 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <ErrorBoundary>
       <Provider store={store}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <SessionProvider>
+        <SessionProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
             <Suspense fallback={null}>
               <NavigationProgress />
             </Suspense>
             {children}
-          </SessionProvider>
-        </ThemeProvider>
-        <Toaster richColors position="top-right" />
+            <Toaster richColors position="top-right" />
+          </ThemeProvider>
+        </SessionProvider>
       </Provider>
     </ErrorBoundary>
   );

@@ -46,11 +46,12 @@ export default function List({
   list: List;
   isFilterLoading: boolean;
 }) {
-  const { size } = useSearchParams();
+  const searchParams = useSearchParams();
+  const size = searchParams.size;
   const dispatch = useDispatch();
 
   const [updateListTitleMutation] = useUpdateListTitleMutation();
-  const [deleteListMutation] = useDeleteListMutation();
+  const [deleteListMutation, { isLoading: isDeleting }] = useDeleteListMutation();
 
   const [open, setOpen] = useState(false);
   const [listTitle, setListTitle] = useState(list.title);
@@ -85,6 +86,7 @@ export default function List({
   };
 
   const handleDelete = async () => {
+    if (isDeleting) return;
     const toastId = toast.loading("Deleting list...");
     try {
       await deleteListMutation({

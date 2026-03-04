@@ -21,13 +21,13 @@ export const cardApi = baseApi.injectEndpoints({
       invalidatesTags: (_, __, arg) => [{ type: "Board", id: arg.boardId }],
     }),
 
-    toggleCardComplete: builder.mutation<Card, string>({
-      query: (cardId) => ({
+    toggleCardComplete: builder.mutation<Card, { cardId: string; boardId: string }>({
+      query: ({ cardId }) => ({
         url: `/cards/${cardId}`,
         method: "PATCH",
         body: { toggleComplete: true },
       }),
-      invalidatesTags: ["Board"],
+      invalidatesTags: (_, __, { boardId }) => [{ type: "Board", id: boardId }],
     }),
 
     updateCardPosition: builder.mutation<

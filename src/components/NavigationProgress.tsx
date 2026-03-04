@@ -40,10 +40,9 @@ function useNavigationProgress() {
     setProgress(0);
     setState("loading");
 
-    // Ease the bar from 0 → ~85% in increments that slow as they approach the cap
     let current = 0;
     intervalRef.current = setInterval(() => {
-      current += Math.random() * 8 + 4; // random step 4–12
+      current += Math.random() * 8 + 4;
       if (current >= 85) {
         current = 85;
         clearInterval(intervalRef.current!);
@@ -61,12 +60,10 @@ function useNavigationProgress() {
     if (prevPathRef.current !== currentPath) {
       prevPathRef.current = currentPath;
       start();
-      // The new page has mounted by the time this effect fires, so complete quickly
       timerRef.current = setTimeout(() => complete(), 50);
     }
   }, [pathname, searchParams, start, complete]);
 
-  // Cleanup on unmount
   useEffect(() => () => clearTimers(), [clearTimers]);
 
   return { state, progress };
@@ -77,6 +74,7 @@ export default function NavigationProgress() {
   const { state, progress } = useNavigationProgress();
 
   const visible = state !== "idle";
+  const isLoading = state === "loading";
 
   return (
     <>
@@ -95,7 +93,6 @@ export default function NavigationProgress() {
           transition: "opacity 300ms ease",
         }}
       >
-        {/* Track (subtle background) */}
         <div
           style={{
             position: "absolute",
@@ -103,8 +100,6 @@ export default function NavigationProgress() {
             background: "var(--progress-track, rgba(99,102,241,0.15))",
           }}
         />
-
-        {/* Animated fill */}
         <div
           style={{
             position: "absolute",
@@ -112,23 +107,12 @@ export default function NavigationProgress() {
             left: 0,
             bottom: 0,
             width: `${progress}%`,
-            background:
-              "linear-gradient(90deg, #6366f1 0%, #818cf8 60%, #a5b4fc 100%)",
-            boxShadow:
-              state === "loading"
-                ? "0 0 10px 1px rgba(99,102,241,0.6)"
-                : "none",
+            background: "linear-gradient(90deg, #6366f1 0%, #818cf8 60%, #a5b4fc 100%)",
+            boxShadow: state === "loading" ? "0 0 10px 1px rgba(99,102,241,0.6)" : "none",
             borderRadius: "0 2px 2px 0",
-            transition:
-              state === "loading"
-                ? "width 120ms linear"
-                : state === "completing"
-                ? "width 200ms cubic-bezier(0.4,0,0.2,1)"
-                : "none",
+            transition: state === "loading" ? "width 120ms linear" : state === "completing" ? "width 200ms cubic-bezier(0.4,0,0.2,1)" : "none",
           }}
         />
-
-        {/* Sheen — the travelling bright spot */}
         {state === "loading" && (
           <div
             style={{
@@ -137,52 +121,65 @@ export default function NavigationProgress() {
               bottom: 0,
               width: "80px",
               left: `calc(${progress}% - 60px)`,
-              background:
-                "linear-gradient(90deg, transparent, rgba(255,255,255,0.55), transparent)",
+              background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.55), transparent)",
               transition: "left 120ms linear",
             }}
           />
         )}
       </div>
 
-      {/* Spinner in top-right — visible during loading */}
-      <div
-        aria-hidden="true"
-        style={{
-          position: "fixed",
-          top: "14px",
-          right: "16px",
-          zIndex: 9999,
-          pointerEvents: "none",
-          opacity: state === "loading" ? 1 : 0,
-          transform: state === "loading" ? "scale(1)" : "scale(0.6)",
-          transition: "opacity 200ms ease, transform 200ms ease",
-        }}
-      >
-        <svg
-          width="18"
-          height="18"
-          viewBox="0 0 18 18"
-          fill="none"
-          style={{ animation: "tt-spin 0.7s linear infinite" }}
+      {/* Full screen loading overlay */}
+      {isLoading && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(255, 255, 255, 0.8)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 9998,
+            backdropFilter: "blur(2px)",
+          }}
+          className="dark:bg-black/60"
         >
-          <circle
-            cx="9"
-            cy="9"
-            r="7"
-            stroke="rgba(99,102,241,0.25)"
-            strokeWidth="2.5"
-          />
-          <path
-            d="M9 2 a7 7 0 0 1 7 7"
-            stroke="#6366f1"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-          />
-        </svg>
-      </div>
+          <div style={{ textAlign: "center" }}>
+            {/* Animated spinner */}
+            <svg
+              width="48"
+              height="48"
+              viewBox="0 0 48 48"
+              fill="none"
+              style={{ animation: "tt-spin 0.7s linear infinite" }}
+            >
+              <circle
+                cx="24"
+                cy="24"
+                r="20"
+                stroke="rgba(99,102,241,0.2)"
+                strokeWidth="4"
+              />
+              <path
+                d="M24 4 a20 20 0 0 1 20 20"
+                stroke="#6366f1"
+                strokeWidth="4"
+                strokeLinecap="round"
+              />
+            </svg>
+            <p
+              style={{
+                marginTop: "16px",
+                color: "#6366f1",
+                fontWeight: 500,
+                fontSize: "14px",
+              }}
+            >
+              Loading...
+            </p>
+          </div>
+        </div>
+      )}
 
-      {/* Keyframes injected once */}
       <style>{`
         @keyframes tt-spin {
           from { transform: rotate(0deg); }

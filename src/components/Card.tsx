@@ -70,7 +70,7 @@ export default function Card({ card, list }: { card: CardType; list: List }) {
     if (!card.id || !card.boardId) return;
     dispatch(toggleCardIsComplete({ cardId: card.id }));
     try {
-      await toggleComplete(card.id).unwrap();
+      await toggleComplete({ cardId: card.id, boardId: card.boardId }).unwrap();
     } catch {
       // dispatch(toggleCardIsComplete({ cardId: card.id }));
     }

@@ -43,7 +43,7 @@ export default function Dashboard() {
   const [open, setOpen] = useState(false);
   const [selectedColor, setSelectedColor] = useState(colorOptions[0]);
 
-  const { data: boards = [], isLoading } = useGetBoardsQuery();
+  const { data: boards = [], isLoading, error } = useGetBoardsQuery();
   const [createBoard, { isLoading: isCreating }] = useCreateBoardMutation();
 
   const {
@@ -74,6 +74,12 @@ export default function Dashboard() {
       <h1 className="font-bold text-2xl sm:text-3xl md:text-4xl">
         Your Boards
       </h1>
+
+      {error && (
+        <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-4 rounded-lg">
+          Failed to load boards. Please try again.
+        </div>
+      )}
 
       <div className="gap-4 sm:gap-5 md:gap-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
         <Popover open={open} onOpenChange={setOpen}>
