@@ -13,12 +13,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <ErrorBoundary>
       <Provider store={store}>
         <SessionProvider>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
+          <ThemeProvider attribute="class" defaultTheme="dark">
             <Suspense fallback={null}>
               <NavigationProgress />
             </Suspense>
