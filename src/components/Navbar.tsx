@@ -1,19 +1,16 @@
 import React from "react";
 import Image from "next/image";
-import { Label } from "./ui/label";
-import { Switch } from "./ui/switch";
 import { Button } from "./ui/button";
-import { useTheme } from "next-themes";
 import { LuLogOut } from "react-icons/lu";
 import { Separator } from "./ui/separator";
 import { useRouter } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
+import { AnimatedThemeToggler } from "./ui/animated-theme-toggler";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 
 export default function Navbar() {
   const router = useRouter();
   const { data } = useSession();
-  const { theme, setTheme } = useTheme();
   return (
     <div className="flex justify-between items-center shadow-md p-2 px-4 sm:px-6 md:px-10 dark:border-gray-600 dark:border-b font-sans">
       <div
@@ -31,58 +28,48 @@ export default function Navbar() {
           TaskTracker
         </h1>
       </div>
-      <Popover>
-        <PopoverTrigger>
-          <Image
-            src={data?.user.image || "/logo.png"}
-            alt="user"
-            width={25}
-            height={25}
-            className="rounded-full w-6 sm:w-7 h-6 sm:h-7 cursor-pointer"
-          />
-        </PopoverTrigger>
-        <PopoverContent className="space-y-5 px-5 py-7 w-[90vw] sm:w-auto max-w-md font-sans">
-          <p className="font-bold text-sm">Account</p>
-          <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3">
+        <AnimatedThemeToggler />
+        <Popover>
+          <PopoverTrigger>
             <Image
               src={data?.user.image || "/logo.png"}
               alt="user"
-              width={40}
-              height={40}
-              className="rounded-full w-10 h-10"
+              width={25}
+              height={25}
+              className="rounded-full w-6 sm:w-7 h-6 sm:h-7 cursor-pointer"
             />
-            <div>
-              <h2 className="font-bold text-base sm:text-lg">
-                {data?.user.name}
-              </h2>
-              <p className="text-xs sm:text-sm">{data?.user.email}</p>
+          </PopoverTrigger>
+          <PopoverContent className="space-y-5 px-5 py-7 w-[90vw] sm:w-auto max-w-md font-sans">
+            <p className="font-bold text-sm">Account</p>
+            <div className="flex items-center gap-3">
+              <Image
+                src={data?.user.image || "/logo.png"}
+                alt="user"
+                width={40}
+                height={40}
+                className="rounded-full w-10 h-10"
+              />
+              <div>
+                <h2 className="font-bold text-base sm:text-lg">
+                  {data?.user.name}
+                </h2>
+                <p className="text-xs sm:text-sm">{data?.user.email}</p>
+              </div>
             </div>
-          </div>
-          <Separator />
-          <p className="font-bold text-sm">Theme</p>
-          <div className="flex items-center gap-2">
-            <Switch
-              id="theme"
-              checked={theme === "dark"}
-              onCheckedChange={() =>
-                setTheme(theme === "dark" ? "light" : "dark")
-              }
-              className="cursor-pointer"
-            />
-            <Label htmlFor="theme">Dark Mode</Label>
-          </div>
-          <Separator />
-          <Button
-            variant="destructive"
-            className="w-full"
-            onClick={() => {
-              signOut();
-            }}
-          >
-            <LuLogOut /> Logout
-          </Button>
-        </PopoverContent>
-      </Popover>
+            <Separator />
+            <Button
+              variant="destructive"
+              className="w-full"
+              onClick={() => {
+                signOut();
+              }}
+            >
+              <LuLogOut /> Logout
+            </Button>
+          </PopoverContent>
+        </Popover>
+      </div>
     </div>
   );
 }
