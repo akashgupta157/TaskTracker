@@ -11,6 +11,7 @@ import { useForm } from "react-hook-form";
 import { Separator } from "./ui/separator";
 import { useSession } from "next-auth/react";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { AvatarCircles } from "./ui/avatar-circles";
 import { useInviteBoardMemberMutation } from "@/redux/api/boardApi";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
@@ -33,7 +34,7 @@ const formSchema = z.object({
         email.endsWith("@gmail.com") || email.endsWith("@googlemail.com"),
       {
         message: "Only Google email addresses are allowed for invitations",
-      }
+      },
     ),
 });
 
@@ -94,52 +95,21 @@ export default function Header({
           </h2>
           <div className="flex flex-shrink-0 items-center gap-2 sm:gap-3 md:gap-5">
             <div className="flex-shrink-0">
-              <div className="flex items-center -space-x-2">
-                {currentBoard?.members?.slice(0, 4).map((member) => (
-                  <Popover key={member.id}>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <PopoverTrigger asChild>
-                          <Image
-                            src={member.user.image || "/logo.png"}
-                            alt={member.user.name || "user"}
-                            width={25}
-                            height={25}
-                            className="border rounded-full size-6 sm:size-7 md:size-8 cursor-pointer"
-                          />
-                        </PopoverTrigger>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>{member.user.name}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                    <PopoverContent className="w-full min-w-fit max-w-[90vw] sm:max-w-xs">
-                      <div className="flex items-center gap-3">
-                        <Image
-                          src={member.user.image || "/logo.png"}
-                          alt={member.user.name || "user"}
-                          width={25}
-                          height={25}
-                          className="z-1 rounded-full size-10 sm:size-12 md:size-14 cursor-pointer"
-                        />
-                        <div className="overflow-hidden">
-                          <p className="font-bold truncate">
-                            {member.user.name}
-                          </p>
-                          <p className="text-sm truncate">
-                            {member.user.email}
-                          </p>
-                        </div>
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-                ))}
-                {currentBoard?.members && currentBoard.members.length > 4 && (
-                  <div className="flex justify-center items-center bg-gray-200 dark:bg-gray-700 rounded-full size-6 sm:size-7 md:size-8 font-medium text-xs">
-                    +{currentBoard.members.length - 4}
-                  </div>
-                )}
-              </div>
+              <AvatarCircles
+                className="-space-x-3"
+                numPeople={
+                  currentBoard && currentBoard.members.length > 4
+                    ? currentBoard.members.length - 4
+                    : 0
+                }
+                avatarUrls={currentBoard?.members
+                  ?.slice(0, 4)
+                  .map((member) => ({
+                    imageUrl: member.user.image || "/logo.png",
+                    name: member.user.name || "",
+                    email: member.user.email || "",
+                  }))}
+              />
             </div>
 
             {/* Filter button */}
@@ -210,7 +180,7 @@ export default function Header({
                                         field.value &&
                                         (field.value.endsWith("@gmail.com") ||
                                           field.value.endsWith(
-                                            "@googlemail.com"
+                                            "@googlemail.com",
                                           ))
                                           ? "border-green-500"
                                           : ""
@@ -219,7 +189,7 @@ export default function Header({
                                     {field.value &&
                                       (field.value.endsWith("@gmail.com") ||
                                         field.value.endsWith(
-                                          "@googlemail.com"
+                                          "@googlemail.com",
                                         )) && (
                                         <LuCheck className="top-3 right-3 absolute w-4 h-4 text-green-500" />
                                       )}

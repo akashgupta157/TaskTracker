@@ -21,7 +21,7 @@ export default function Board() {
   const searchParams = useSearchParams();
 
   const currentBoard = useSelector(
-    (state: RootState) => state.board.currentBoard
+    (state: RootState) => state.board.currentBoard,
   );
 
   const boardId = pathname.split("/").pop() as string;
