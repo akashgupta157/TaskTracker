@@ -50,6 +50,20 @@ export const boardApi = baseApi.injectEndpoints({
         { type: "Board", id: arg.boardId },
       ],
     }),
+
+    updateBoardBackground: builder.mutation<
+      Board,
+      { boardId: string; background: string }
+    >({
+      query: ({ boardId, background }) => ({
+        url: `/boards/${boardId}`,
+        method: "PUT",
+        body: { background },
+      }),
+      invalidatesTags: (_result, _error, arg) => [
+        { type: "Board", id: arg.boardId },
+      ],
+    }),
   }),
 });
 
@@ -58,5 +72,6 @@ export const {
   useGetBoardByIdQuery,
   useFilterBoardQuery,
   useCreateBoardMutation,
-  useInviteBoardMemberMutation
+  useInviteBoardMemberMutation,
+  useUpdateBoardBackgroundMutation
 } = boardApi;

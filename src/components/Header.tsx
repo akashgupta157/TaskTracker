@@ -12,6 +12,7 @@ import { Separator } from "./ui/separator";
 import { useSession } from "next-auth/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AvatarCircles } from "./ui/avatar-circles";
+import { BackgroundSelector } from "./BackgroundSelector";
 import { useInviteBoardMemberMutation } from "@/redux/api/boardApi";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
@@ -93,13 +94,13 @@ export default function Header({
           <h2 className="max-w-[180px] sm:max-w-xs md:max-w-md font-bold text-lg sm:text-xl truncate">
             {currentBoard?.title}
           </h2>
-          <div className="flex flex-shrink-0 items-center gap-2 sm:gap-3 md:gap-5">
+          <div className="flex flex-shrink-0 items-center gap-2">
             <div className="flex-shrink-0">
               <AvatarCircles
                 className="-space-x-3"
                 numPeople={
-                  currentBoard && currentBoard.members.length > 4
-                    ? currentBoard.members.length - 4
+                  currentBoard && currentBoard.members?.length > 4
+                    ? currentBoard.members?.length - 4
                     : 0
                 }
                 avatarUrls={currentBoard?.members
@@ -137,6 +138,8 @@ export default function Header({
                 />
               </PopoverContent>
             </Popover>
+
+            <BackgroundSelector currentBoard={currentBoard} />
 
             {/* Invite member dialog */}
             <Dialog open={open} onOpenChange={setOpen}>
