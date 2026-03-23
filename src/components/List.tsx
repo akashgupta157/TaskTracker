@@ -57,7 +57,7 @@ export default function List({
 
   const cardIds = useMemo(
     () => list.cards?.map((card) => card.id) || [],
-    [list.cards]
+    [list.cards],
   );
 
   const {
@@ -150,7 +150,7 @@ export default function List({
         </AlertDialog>
       </div>
 
-      <div className="flex-1 space-y-3 my-2 overflow-hidden overflow-y-auto">
+      <div className="flex-1 space-y-3 my-2 overflow-hidden overflow-y-auto scrollbar-thin scrollbar-thumb-[var(--scrollbar-thumb)] hover:scrollbar-thumb-[var(--scrollbar-thumb-hover)] scrollbar-track-transparent">
         {isFilterLoading ? (
           <>
             <CardSkeleton />
