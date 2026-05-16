@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { startTopProgress } from "@/components/TopProgress";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { setCurrentBoard } from "@/redux/slices/boardSlice";
 import {
@@ -158,6 +159,7 @@ export default function Dashboard() {
               <div
                 key={board.id}
                 onClick={() => {
+                  startTopProgress();
                   dispatch(setCurrentBoard(board));
                   router.push(`/board/${board.id}`);
                 }}
