@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -n \"^};$\" src/components/CardDialog.tsx)",
+      "Bash(grep -c \"^};$\" src/components/CardDialog.tsx)",
+      "Bash(sed -n '985,1000p' src/components/CardDialog.tsx)",
+      "Bash(sed -n '1000,1020p' src/components/CardDialog.tsx)",
+      "Bash(awk 'NR==1,NR==1' src/components/CardDialog.tsx)",
+      "Bash(awk 'NR==350' src/components/CardDialog.tsx)",
+      "Bash(awk 'NR>=90 && NR<=130' src/components/CardDialog.tsx)",
+      "Bash(rm -f /c/Users/akash/OneDrive/Desktop/TaskTracker/src/lib/activity_test.ts)",
+      "Bash(awk 'NR>=580 && NR<=620' src/components/CardDialog.tsx)",
+      "Bash(npx tsc *)"
+    ]
+  }
+}

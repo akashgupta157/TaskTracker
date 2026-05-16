@@ -16,6 +16,8 @@ import React, { useState, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { DateTimePickerForm } from "./DateTimePickerForm";
 import { addCard, modifyCard, removeCard } from "@/redux/slices/boardSlice";
+import { CardComments } from "./CardComments";
+import { CardActivity } from "./CardActivity";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import {
@@ -44,16 +46,19 @@ import {
 import {
   LuX,
   LuText,
+  LuFlag,
   LuCheck,
   LuCircle,
   LuTrash2,
-  LuCaptions,
   LuPaperclip,
   LuUsersRound,
-  LuArrowUpDown,
   LuChevronDown,
   LuCalendarRange,
   LuSquareCheckBig,
+  LuListChecks,
+  LuFile,
+  LuMessageSquare,
+  LuActivity,
 } from "react-icons/lu";
 
 const RTEditor = dynamic(() => import("./RTEditor"), {
@@ -62,6 +67,30 @@ const RTEditor = dynamic(() => import("./RTEditor"), {
 
 const generateId = () =>
   `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+const PRIORITY_STYLES: Record<
+  string,
+  { dot: string; text: string; bg: string; ring: string }
+> = {
+  HIGH: {
+    dot: "bg-red-500",
+    text: "text-red-600 dark:text-red-400",
+    bg: "bg-red-50 dark:bg-red-500/10",
+    ring: "ring-red-200 dark:ring-red-500/20",
+  },
+  MEDIUM: {
+    dot: "bg-amber-500",
+    text: "text-amber-600 dark:text-amber-400",
+    bg: "bg-amber-50 dark:bg-amber-500/10",
+    ring: "ring-amber-200 dark:ring-amber-500/20",
+  },
+  LOW: {
+    dot: "bg-emerald-500",
+    text: "text-emerald-600 dark:text-emerald-400",
+    bg: "bg-emerald-50 dark:bg-emerald-500/10",
+    ring: "ring-emerald-200 dark:ring-emerald-500/20",
+  },
+};
 
 export default function CardDialog({
   list,
@@ -98,7 +127,7 @@ export default function CardDialog({
     attachments: cardData?.attachments || [],
     assignees:
       cardData?.assignees?.map(
-        (assignee: { boardMember: BoardMember }) => assignee.boardMember
+        (assignee: { boardMember: BoardMember }) => assignee.boardMember,
       ) || [],
     boardId: currentBoard?.id,
   });
@@ -108,18 +137,18 @@ export default function CardDialog({
       (member) =>
         !cardDetails.assignees
           .map((assignee) => assignee.userId)
-          .includes(member.userId)
-    ) || []
+          .includes(member.userId),
+    ) || [],
   );
 
   const handleChange = useCallback(
     <T extends keyof typeof cardDetails>(
       field: T,
-      value: (typeof cardDetails)[T] | string | null
+      value: (typeof cardDetails)[T] | string | null,
     ) => {
       setCardDetails((prev) => ({ ...prev, [field]: value }));
     },
-    []
+    [],
   );
 
   const handleDateSubmit = useCallback(
@@ -127,7 +156,7 @@ export default function CardDialog({
       handleChange("dueDate", date.toISOString());
       setOpen(false);
     },
-    [handleChange]
+    [handleChange],
   );
 
   const handleAddChecklist = useCallback(() => {
@@ -149,11 +178,11 @@ export default function CardDialog({
       setCardDetails((prev) => ({
         ...prev,
         checklist: prev.checklist.map((item) =>
-          item.id === id ? { ...item, [field]: value } : item
+          item.id === id ? { ...item, [field]: value } : item,
         ),
       }));
     },
-    []
+    [],
   );
 
   const handleRemoveChecklistItem = useCallback((id: string) => {
@@ -187,13 +216,13 @@ export default function CardDialog({
           `Failed to upload file: ${
             error instanceof Error ? error.message : "Unknown error"
           }`,
-          { id: toastId }
+          { id: toastId },
         );
       } finally {
         setIsUploading(false);
       }
     },
-    []
+    [],
   );
 
   const handleRemoveAttachment = useCallback((index: number) => {
@@ -206,14 +235,14 @@ export default function CardDialog({
   const handleAssigneeChange = useCallback(
     (boardMember: BoardMember) => {
       const isAlreadyAssigned = cardDetails.assignees.some(
-        (assignee) => assignee.userId === boardMember.userId
+        (assignee) => assignee.userId === boardMember.userId,
       );
 
       if (isAlreadyAssigned) {
         setCardDetails((prev) => ({
           ...prev,
           assignees: prev.assignees.filter(
-            (assignee) => assignee.userId !== boardMember.userId
+            (assignee) => assignee.userId !== boardMember.userId,
           ),
         }));
         setBoardMember((prev) => [...prev, boardMember]);
@@ -223,11 +252,11 @@ export default function CardDialog({
           assignees: [...prev.assignees, boardMember],
         }));
         setBoardMember((prev) =>
-          prev.filter((member) => member.userId !== boardMember.userId)
+          prev.filter((member) => member.userId !== boardMember.userId),
         );
       }
     },
-    [cardDetails.assignees]
+    [cardDetails.assignees],
   );
 
   const handleSubmit = useCallback(async () => {
@@ -280,47 +309,61 @@ export default function CardDialog({
     }
   }, [cardData, setDialogOpen, currentBoard?.id, deleteCard, dispatch]);
 
+  const checklistDone = cardDetails.checklist.filter((i) => i.isChecked).length;
+  const checklistTotal = cardDetails.checklist.length;
+  const checklistPct = checklistTotal
+    ? (checklistDone / checklistTotal) * 100
+    : 0;
+
   return (
     <>
-      <div className="flex justify-between items-center">
-        <Select
-          value={cardDetails.listId}
-          onValueChange={(value) => handleChange("listId", value)}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Select a list" />
-          </SelectTrigger>
-          <SelectContent>
-            {currentBoard?.lists.map((e) => (
-              <SelectItem key={e.id} value={e.id}>
-                {e.title}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      {/* Header bar */}
+      <div className="flex justify-between items-center gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="text-muted-foreground text-xs uppercase tracking-wider hidden sm:inline">
+            In list
+          </span>
+          <Select
+            value={cardDetails.listId}
+            onValueChange={(value) => handleChange("listId", value)}
+          >
+            <SelectTrigger className="h-8 text-sm font-medium border-dashed">
+              <SelectValue placeholder="Select a list" />
+            </SelectTrigger>
+            <SelectContent>
+              {currentBoard?.lists.map((e) => (
+                <SelectItem key={e.id} value={e.id}>
+                  {e.title}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
         {!isNew && (
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button
-                variant="outline"
-                className="mr-2 sm:mr-4 text-destructive hover:text-destructive/80"
+                variant="ghost"
+                size="sm"
+                className="text-destructive hover:bg-destructive/10 hover:text-destructive"
               >
-                <LuTrash2 /> <p className="hidden sm:inline">Delete Card</p>
+                <LuTrash2 className="size-4" />
+                <span className="hidden sm:inline">Delete</span>
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogTitle>Delete this card?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  This action cannot be undone. This will permanently delete
-                  your card and remove your data from our servers.
+                  This action cannot be undone. The card and all its data will
+                  be permanently removed.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction
-                  className="bg-destructive hover:bg-destructive/80"
+                  className="bg-destructive hover:bg-destructive/90"
                   onClick={handleDelete}
                 >
                   Delete
@@ -331,33 +374,42 @@ export default function CardDialog({
         )}
       </div>
 
-      <Separator className="my-1" />
+      <Separator className="my-3" />
 
-      <div className="flex lg:flex-row flex-col gap-4">
-        <div className="flex-1 space-y-5 max-h-[calc(100vh-200px)] overflow-y-auto">
-          <div className="flex items-center gap-2">
+      <div className="flex lg:flex-row flex-col gap-6">
+        {/* Main column */}
+        <div className="flex-1 space-y-6 max-h-[calc(100vh-200px)] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-[var(--scrollbar-thumb)] hover:scrollbar-thumb-[var(--scrollbar-thumb-hover)] scrollbar-track-transparent">
+          {/* Title row */}
+          <div className="flex items-start gap-3">
             <Tooltip>
               <TooltipTrigger asChild>
-                {cardDetails.isCompleted ? (
-                  <div
-                    className="relative cursor-pointer"
-                    onClick={() => handleChange("isCompleted", false)}
-                  >
-                    <LuCircle
-                      className="size-5 text-[#2abb7f]"
-                      fill="#2abb7f"
-                    />
-                    <LuCheck
-                      className="top-[calc(50%-6px)] left-[calc(50%-6px)] absolute size-3 text-background"
-                      strokeWidth={4}
-                    />
-                  </div>
-                ) : (
-                  <LuCircle
-                    className="size-5 cursor-pointer"
-                    onClick={() => handleChange("isCompleted", true)}
-                  />
-                )}
+                <button
+                  type="button"
+                  onClick={() =>
+                    handleChange("isCompleted", !cardDetails.isCompleted)
+                  }
+                  className="mt-1 shrink-0"
+                  aria-label={
+                    cardDetails.isCompleted
+                      ? "Mark incomplete"
+                      : "Mark completed"
+                  }
+                >
+                  {cardDetails.isCompleted ? (
+                    <div className="relative">
+                      <LuCircle
+                        className="size-6 text-emerald-500"
+                        fill="currentColor"
+                      />
+                      <LuCheck
+                        className="top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 absolute size-3.5 text-white"
+                        strokeWidth={4}
+                      />
+                    </div>
+                  ) : (
+                    <LuCircle className="size-6 text-muted-foreground hover:text-emerald-500 transition-colors" />
+                  )}
+                </button>
               </TooltipTrigger>
               <TooltipContent>
                 <p>
@@ -368,14 +420,24 @@ export default function CardDialog({
               </TooltipContent>
             </Tooltip>
 
-            <LuCaptions className="size-6" />
-            <InlineEdit
-              value={cardDetails.title}
-              onChange={(value) => handleChange("title", value)}
-              className="font-medium text-xl sm:text-2xl"
-            />
+            <div className="flex-1 min-w-0">
+              <InlineEdit
+                value={cardDetails.title}
+                onChange={(value) => handleChange("title", value)}
+                className={`font-semibold text-xl sm:text-2xl block leading-tight ${
+                  cardDetails.isCompleted
+                    ? "line-through text-muted-foreground"
+                    : ""
+                }`}
+              />
+              <p className="mt-1 text-muted-foreground text-xs">
+                Click the title to edit
+              </p>
+            </div>
           </div>
-          <div className="md:hidden">
+
+          {/* Mobile sidebar */}
+          <div className="lg:hidden">
             <SidebarActions
               priority={cardDetails.priority}
               dueDate={cardDetails.dueDate}
@@ -390,227 +452,167 @@ export default function CardDialog({
             />
           </div>
 
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <LuText className="size-5" />
-              <span className="font-semibold">Description</span>
+          {/* Quick-info chips */}
+          {(cardDetails.priority ||
+            cardDetails.dueDate ||
+            cardDetails.assignees.length > 0) && (
+            <div className="flex flex-wrap gap-2">
+              {cardDetails.priority && (
+                <button
+                  type="button"
+                  onClick={() => handleChange("priority", null)}
+                  className={`group inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ring-1 ${
+                    PRIORITY_STYLES[cardDetails.priority].bg
+                  } ${PRIORITY_STYLES[cardDetails.priority].text} ${
+                    PRIORITY_STYLES[cardDetails.priority].ring
+                  }`}
+                >
+                  <LuFlag className="size-3" />
+                  {cardDetails.priority}
+                  <LuX className="opacity-50 group-hover:opacity-100 size-3" />
+                </button>
+              )}
+              {cardDetails.dueDate && (
+                <button
+                  type="button"
+                  onClick={() => handleChange("dueDate", null)}
+                  className="group inline-flex items-center gap-1.5 bg-accent/60 ring-1 ring-border px-3 py-1 rounded-full font-medium text-accent-foreground text-xs"
+                >
+                  <LuCalendarRange className="size-3" />
+                  {formatDate(cardDetails.dueDate, "MMM d, h:mm a")}
+                  <LuX className="opacity-50 group-hover:opacity-100 size-3" />
+                </button>
+              )}
+              {cardDetails.assignees.length > 0 && (
+                <div className="inline-flex items-center gap-1.5 bg-muted ring-1 ring-border px-2.5 py-0.5 rounded-full">
+                  <div className="flex items-center -space-x-1.5">
+                    {cardDetails.assignees.slice(0, 3).map((assignee) => (
+                      <Tooltip key={assignee.userId}>
+                        <TooltipTrigger asChild>
+                          <Image
+                            src={assignee.user?.image || "/default-avatar.png"}
+                            alt={assignee.user?.name || "User"}
+                            width={20}
+                            height={20}
+                            className="border-2 border-background rounded-full"
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom">
+                          <p className="text-xs">{assignee.user?.name}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    ))}
+                  </div>
+                  {cardDetails.assignees.length > 3 && (
+                    <span className="font-medium text-muted-foreground text-xs">
+                      +{cardDetails.assignees.length - 3}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
+          )}
+
+          {/* Description */}
+          <section className="space-y-2">
+            <SectionHeader
+              icon={<LuText className="size-4" />}
+              title="Description"
+            />
             <RTEditor
               value={cardDetails.description}
               onChange={(value) => handleChange("description", value)}
             />
-          </div>
+          </section>
 
-          {cardDetails.assignees.length > 0 && (
-            <div className="flex items-center gap-2 bg-muted/20 p-2 rounded-lg">
-              <LuUsersRound className="flex-shrink-0 size-4 text-muted-foreground" />
-              <div className="flex items-center -space-x-2">
-                {cardDetails.assignees.slice(0, 4).map((assignee) => (
-                  <Tooltip key={assignee.userId}>
-                    <TooltipTrigger asChild>
-                      <Image
-                        src={assignee.user?.image || "/default-avatar.png"}
-                        alt={assignee.user?.name || "User"}
-                        width={28}
-                        height={28}
-                        className="hover:z-10 border-2 border-background rounded-full hover:scale-110 transition-transform"
-                      />
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom">
-                      <p className="text-sm">{assignee.user?.name}</p>
-                    </TooltipContent>
-                  </Tooltip>
+          {/* Checklist */}
+          {cardDetails.checklist.length > 0 && (
+            <section className="space-y-3 bg-card border border-border rounded-xl p-4">
+              <div className="flex items-center justify-between gap-3">
+                <SectionHeader
+                  icon={<LuListChecks className="size-4" />}
+                  title="Checklist"
+                  subtitle={`${checklistDone} of ${checklistTotal} completed`}
+                />
+                <span className="text-xs font-medium text-muted-foreground tabular-nums">
+                  {Math.round(checklistPct)}%
+                </span>
+              </div>
+              <div className="bg-muted rounded-full w-full h-1.5 overflow-hidden">
+                <div
+                  className="bg-emerald-500 h-full transition-all duration-300"
+                  style={{ width: `${checklistPct}%` }}
+                />
+              </div>
+              <div className="space-y-1">
+                {cardDetails.checklist.map((item) => (
+                  <ChecklistItem
+                    key={item.id}
+                    item={item}
+                    onChange={handleChecklistChange}
+                    onRemove={handleRemoveChecklistItem}
+                  />
                 ))}
               </div>
-              {cardDetails.assignees.length > 4 && (
-                <div className="flex justify-center items-center bg-muted rounded-full w-7 h-7 font-medium text-xs">
-                  +{cardDetails.assignees.length - 4}
-                </div>
-              )}
-              <span className="ml-1 text-muted-foreground text-sm">
-                {cardDetails.assignees.length}{" "}
-                {cardDetails.assignees.length === 1 ? "assignee" : "assignees"}
-              </span>
-            </div>
+            </section>
           )}
 
-          <div className="gap-3 grid grid-cols-1 md:grid-cols-2">
-            {cardDetails.priority && (
-              <div className="bg-muted/30 p-3 rounded-lg">
-                <div className="flex justify-between items-start">
-                  <div className="flex items-center gap-2">
-                    <div
-                      className={`p-2 rounded-full ${
-                        cardDetails.priority === "HIGH"
-                          ? "bg-red-100 text-red-600"
-                          : cardDetails.priority === "MEDIUM"
-                          ? "bg-yellow-100 text-yellow-600"
-                          : "bg-green-100 text-green-600"
-                      }`}
-                    >
-                      <LuArrowUpDown className="size-4" />
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground text-sm">Priority</p>
-                      <p
-                        className={`font-semibold ${
-                          cardDetails.priority === "HIGH"
-                            ? "text-red-600"
-                            : cardDetails.priority === "MEDIUM"
-                            ? "text-yellow-600"
-                            : "text-green-600"
-                        }`}
-                      >
-                        {cardDetails.priority}
-                      </p>
-                    </div>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleChange("priority", null)}
-                    className="w-7 h-7 text-muted-foreground hover:text-destructive"
-                  >
-                    <LuX className="size-3.5" />
-                  </Button>
-                </div>
+          {/* Attachments */}
+          {cardDetails.attachments.length > 0 && (
+            <section className="space-y-3 bg-card border border-border rounded-xl p-4">
+              <SectionHeader
+                icon={<LuPaperclip className="size-4" />}
+                title="Attachments"
+                subtitle={`${cardDetails.attachments.length} file${
+                  cardDetails.attachments.length === 1 ? "" : "s"
+                }`}
+              />
+              <div className="grid gap-2 grid-cols-1 sm:grid-cols-2">
+                {cardDetails.attachments.map((attachment, index) => (
+                  <AttachmentItem
+                    key={index}
+                    attachment={attachment}
+                    onRemove={() => handleRemoveAttachment(index)}
+                  />
+                ))}
               </div>
-            )}
+            </section>
+          )}
 
-            {cardDetails.dueDate && (
-              <div className="bg-muted/30 p-3 rounded-lg">
-                <div className="flex justify-between items-start">
-                  <div className="flex items-start gap-2">
-                    <div className="bg-blue-100 mt-1.5 p-2 rounded-full text-blue-600">
-                      <LuCalendarRange className="size-4" />
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground text-sm">Due Date</p>
-                      <p className="font-semibold">
-                        {formatDate(cardDetails.dueDate, "dd/MM/yyyy")}
-                      </p>
-                      <p className="text-muted-foreground text-xs">
-                        {formatDate(cardDetails.dueDate, "hh:mm a")}
-                      </p>
-                    </div>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleChange("dueDate", null)}
-                    className="w-7 h-7 text-muted-foreground hover:text-destructive"
-                  >
-                    <LuX className="size-3.5" />
-                  </Button>
-                </div>
-              </div>
-            )}
+          {/* Comments + Activity (existing cards only) */}
+          {!isNew && cardData?.id && (
+            <CommentsActivityTabs cardId={cardData.id} />
+          )}
 
-            {cardDetails.checklist.length > 0 && (
-              <div className="md:col-span-2 bg-muted/30 p-3 rounded-lg">
-                <div className="flex justify-between items-center mb-3">
-                  <div className="flex items-center gap-2">
-                    <div className="bg-purple-100 p-2 rounded-full text-purple-600">
-                      <LuSquareCheckBig className="size-4" />
-                    </div>
-                    <div>
-                      <p className="font-semibold">Checklist</p>
-                      <p className="text-muted-foreground text-sm">
-                        {
-                          cardDetails.checklist.filter((item) => item.isChecked)
-                            .length
-                        }{" "}
-                        of {cardDetails.checklist.length} completed
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="md:hidden bg-gray-200 rounded-full w-24 h-2 overflow-hidden">
-                    <div
-                      className="bg-green-500 h-full transition-all duration-300"
-                      style={{
-                        width: `${
-                          (cardDetails.checklist.filter(
-                            (item) => item.isChecked
-                          ).length /
-                            cardDetails.checklist.length) *
-                          100
-                        }%`,
-                      }}
-                    ></div>
-                  </div>
-                </div>
-
-                <div className="hidden md:block bg-gray-200 mb-3 rounded-full w-full h-2 overflow-hidden">
-                  <div
-                    className="bg-green-500 h-full transition-all duration-300"
-                    style={{
-                      width: `${
-                        (cardDetails.checklist.filter((item) => item.isChecked)
-                          .length /
-                          cardDetails.checklist.length) *
-                        100
-                      }%`,
-                    }}
-                  ></div>
-                </div>
-
-                <div className="space-y-2">
-                  {cardDetails.checklist.map((item) => (
-                    <ChecklistItem
-                      key={item.id}
-                      item={item}
-                      onChange={handleChecklistChange}
-                      onRemove={handleRemoveChecklistItem}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {cardDetails.attachments.length > 0 && (
-              <div className="md:col-span-2 bg-muted/30 p-3 rounded-lg">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="bg-cyan-100 p-2 rounded-full text-cyan-600">
-                    <LuPaperclip className="size-4" />
-                  </div>
-                  <div>
-                    <p className="font-semibold">Attachments</p>
-                    <p className="text-muted-foreground text-sm">
-                      {cardDetails.attachments.length} files
-                    </p>
-                  </div>
-                </div>
-
-                <div className="gap-2 grid grid-cols-1 sm:grid-cols-2">
-                  {cardDetails.attachments.map((attachment, index) => (
-                    <AttachmentItem
-                      key={index}
-                      attachment={attachment}
-                      onRemove={() => handleRemoveAttachment(index)}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
+          {/* Footer */}
           <div className="bottom-0 sticky bg-background mt-4 pt-4 pb-2 border-t">
-            <Button
-              disabled={!cardDetails.title.trim() || cardLoading}
-              onClick={handleSubmit}
-              className="w-full sm:w-auto"
-            >
-              {cardLoading ? (
-                <Loading />
-              ) : isNew ? (
-                "Create Card"
-              ) : (
-                "Update Card"
-              )}
-            </Button>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="ghost"
+                onClick={() => setDialogOpen(false)}
+                disabled={cardLoading}
+              >
+                Cancel
+              </Button>
+              <Button
+                disabled={!cardDetails.title.trim() || cardLoading}
+                onClick={handleSubmit}
+                className="min-w-28"
+              >
+                {cardLoading ? (
+                  <Loading />
+                ) : isNew ? (
+                  "Create Card"
+                ) : (
+                  "Save Changes"
+                )}
+              </Button>
+            </div>
           </div>
         </div>
-        <div className="hidden md:block">
+
+        {/* Desktop sidebar */}
+        <aside className="hidden lg:block w-56 shrink-0">
           <SidebarActions
             priority={cardDetails.priority}
             dueDate={cardDetails.dueDate}
@@ -623,11 +625,31 @@ export default function CardDialog({
             assignees={cardDetails.assignees}
             handleAssigneeChange={handleAssigneeChange}
           />
-        </div>
+        </aside>
       </div>
     </>
   );
 }
+
+const SectionHeader = ({
+  icon,
+  title,
+  subtitle,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  subtitle?: string;
+}) => (
+  <div className="flex items-center gap-2">
+    <span className="flex justify-center items-center bg-accent rounded-md w-7 h-7 text-accent-foreground">
+      {icon}
+    </span>
+    <div>
+      <p className="font-semibold text-sm leading-tight">{title}</p>
+      {subtitle && <p className="text-muted-foreground text-xs">{subtitle}</p>}
+    </div>
+  </div>
+);
 
 const ChecklistItem = ({
   item,
@@ -638,32 +660,32 @@ const ChecklistItem = ({
   onChange: (
     id: string,
     field: "isChecked" | "title",
-    value: string | boolean
+    value: string | boolean,
   ) => void;
   onRemove: (id: string) => void;
 }) => (
-  <div className="group flex items-center gap-2">
+  <div className="group flex items-center gap-2 hover:bg-muted/60 -mx-1 px-1 py-1 rounded-md transition-colors">
     <Checkbox
       checked={item.isChecked}
       onCheckedChange={(checked) =>
         onChange(item.id, "isChecked", checked as boolean)
       }
-      className="rounded-md w-5 h-5"
+      className="rounded-md w-4 h-4"
     />
     <InlineEdit
       value={item.title}
       onChange={(value) => onChange(item.id, "title", value)}
-      className={`flex-1 ${
+      className={`flex-1 text-sm ${
         item.isChecked ? "line-through text-muted-foreground" : ""
       }`}
     />
     <Button
       variant="ghost"
       size="icon"
-      className="opacity-0 group-hover:opacity-100 w-6 h-6"
+      className="opacity-0 group-hover:opacity-100 w-6 h-6 text-muted-foreground hover:text-destructive"
       onClick={() => onRemove(item.id)}
     >
-      <LuX className="size-4" />
+      <LuX className="size-3.5" />
     </Button>
   </div>
 );
@@ -674,33 +696,59 @@ const AttachmentItem = ({
 }: {
   attachment: { name: string; url: string };
   onRemove: () => void;
-}) => (
-  <div className="group flex justify-between items-center gap-2 cursor-pointer">
-    <div
-      className="flex items-center gap-2"
-      onClick={() => window.open(attachment.url, "_blank")}
-    >
-      <div className="flex justify-center items-center bg-muted-foreground px-1 rounded-md min-w-10 h-10">
-        <p className="font-semibold uppercase">
-          {attachment.name.split(".").pop()}
-        </p>
+}) => {
+  const ext = attachment.name.split(".").pop()?.toUpperCase() || "FILE";
+  return (
+    <div className="group flex justify-between items-center gap-2 bg-muted/40 hover:bg-muted px-2 py-2 border border-border rounded-lg transition-colors">
+      <div
+        className="flex items-center gap-2 min-w-0 flex-1 cursor-pointer"
+        onClick={() => window.open(attachment.url, "_blank")}
+      >
+        <div className="relative flex justify-center items-center bg-primary/10 rounded-md w-10 h-10 shrink-0">
+          <LuFile className="size-5 text-primary" />
+          <span className="absolute bottom-0.5 text-[8px] font-bold text-primary leading-none">
+            {ext.slice(0, 4)}
+          </span>
+        </div>
+        <span className="block min-w-0 font-medium text-sm truncate">
+          {attachment.name}
+        </span>
       </div>
-      <span className="block max-w-[180px] font-semibold text-sm truncate">
-        {attachment.name}
-      </span>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="opacity-0 group-hover:opacity-100 w-7 h-7 text-muted-foreground hover:text-destructive shrink-0"
+        onClick={(e) => {
+          e.stopPropagation();
+          onRemove();
+        }}
+      >
+        <LuX className="size-4" />
+      </Button>
     </div>
-    <Button
-      variant="ghost"
-      size="icon"
-      className="opacity-0 group-hover:opacity-100 w-6 h-6"
-      onClick={(e) => {
-        e.stopPropagation();
-        onRemove();
-      }}
-    >
-      <LuX className="size-4" />
-    </Button>
-  </div>
+  );
+};
+
+const SidebarActionButton = ({
+  icon,
+  label,
+  onClick,
+  disabled,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  onClick?: () => void;
+  disabled?: boolean;
+}) => (
+  <Button
+    variant="ghost"
+    onClick={onClick}
+    disabled={disabled}
+    className="w-full justify-start gap-2 font-normal text-sm bg-muted/50 hover:bg-muted"
+  >
+    {icon}
+    <span>{label}</span>
+  </Button>
 );
 
 const SidebarActions = ({
@@ -729,183 +777,245 @@ const SidebarActions = ({
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="sm:flex sm:flex-col gap-2 sm:gap-0 sm:space-y-4 grid grid-cols-2">
-      <Select value={priority || ""} onValueChange={onPriorityChange}>
-        <SelectTrigger className="w-full sm:w-[180px]">
-          <SelectValue
-            placeholder={
-              <div className="flex items-center gap-2">
-                <LuArrowUpDown className="size-4" />
-                <span>
-                  <span className="hidden sm:inline">Select </span>Priority
-                </span>
-              </div>
-            }
+    <div className="space-y-4">
+      <div className="space-y-1.5">
+        <p className="text-muted-foreground text-xs font-medium uppercase tracking-wider px-1">
+          Card details
+        </p>
+        <div className="grid grid-cols-2 lg:grid-cols-1 gap-1.5">
+          <Select value={priority || ""} onValueChange={onPriorityChange}>
+            <SelectTrigger className="w-full bg-muted/50 hover:bg-muted border-0 font-normal text-sm justify-start gap-2 [&>span]:flex [&>span]:items-center [&>span]:gap-2">
+              <SelectValue
+                placeholder={
+                  <span className="flex items-center gap-2 text-foreground">
+                    <LuFlag className="size-4" />
+                    Priority
+                  </span>
+                }
+              />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="HIGH">
+                <div className="flex items-center gap-2">
+                  <span className="bg-red-500 rounded-full size-2" />
+                  <span>High</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="MEDIUM">
+                <div className="flex items-center gap-2">
+                  <span className="bg-amber-500 rounded-full size-2" />
+                  <span>Medium</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="LOW">
+                <div className="flex items-center gap-2">
+                  <span className="bg-emerald-500 rounded-full size-2" />
+                  <span>Low</span>
+                </div>
+              </SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="ghost"
+                className="w-full justify-between bg-muted/50 hover:bg-muted font-normal text-sm"
+              >
+                <div className="flex items-center gap-2">
+                  <LuCalendarRange className="size-4" />
+                  <span>Due date</span>
+                </div>
+                <LuChevronDown className="opacity-50 size-4" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent
+              className="w-auto p-3 max-h-[min(calc(100vh-2rem),36rem)] overflow-y-auto scrollbar-thin scrollbar-thumb-[var(--scrollbar-thumb)] scrollbar-track-transparent"
+              align="end"
+              side="left"
+              sideOffset={8}
+              collisionPadding={16}
+            >
+              <DateTimePickerForm
+                onSubmit={(data) => {
+                  onDueDateChange(data.time);
+                  setOpen(false);
+                }}
+                initialDate={dueDate ? new Date(dueDate) : undefined}
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+      </div>
+
+      <div className="space-y-1.5">
+        <p className="text-muted-foreground text-xs font-medium uppercase tracking-wider px-1">
+          Add to card
+        </p>
+        <div className="grid grid-cols-2 lg:grid-cols-1 gap-1.5">
+          <SidebarActionButton
+            icon={<LuSquareCheckBig className="size-4" />}
+            label="Checklist"
+            onClick={onAddChecklist}
           />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="HIGH">
-            <div className="flex items-center gap-2">
-              <span className="bg-red-500 w-10 h-3" />
-              <span>High</span>
-            </div>
-          </SelectItem>
-          <SelectItem value="MEDIUM">
-            <div className="flex items-center gap-2">
-              <span className="bg-yellow-500 w-10 h-3" />
-              <span>Medium</span>
-            </div>
-          </SelectItem>
-          <SelectItem value="LOW">
-            <div className="flex items-center gap-2">
-              <span className="bg-green-500 w-10 h-3" />
-              <span>Low</span>
-            </div>
-          </SelectItem>
-        </SelectContent>
-      </Select>
 
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            className="flex justify-between w-full font-normal text-muted-foreground hover:text-muted-foreground"
-          >
-            <div className="flex items-center gap-2">
-              <LuCalendarRange className="size-4" />
-              <span>Set Due Date</span>
-            </div>
-            <LuChevronDown className="opacity-50 size-4" />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="">
-          <DateTimePickerForm
-            onSubmit={(data) => {
-              onDueDateChange(data.time);
-              setOpen(false);
-            }}
-            initialDate={dueDate ? new Date(dueDate) : undefined}
-          />
-        </PopoverContent>
-      </Popover>
-
-      <Button
-        variant="outline"
-        className="flex justify-start items-center w-full font-normal text-muted-foreground hover:text-muted-foreground"
-        onClick={onAddChecklist}
-      >
-        <LuSquareCheckBig className="size-4" />
-        <span>Add Checklist</span>
-      </Button>
-
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            className="flex justify-start items-center w-full font-normal text-muted-foreground hover:text-muted-foreground"
-            disabled={isUploading}
-          >
-            <LuPaperclip className="size-4" />
-            <span>{isUploading ? "Uploading..." : "Attachment"}</span>
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="p-4 w-80" align="start">
-          <div className="space-y-2">
-            <Label className="font-semibold">Attach</Label>
-            <p className="text-muted-foreground text-sm">
-              Select a file to attach
-            </p>
-            <div>
-              <Label className="block cursor-pointer">
-                <span className="sr-only">Choose a file</span>
-                <Input
-                  type="file"
-                  className="hidden"
-                  onChange={onAttachmentUpload}
-                  disabled={isUploading}
-                />
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  asChild
-                  disabled={isUploading}
-                >
-                  <span>Choose a file</span>
-                </Button>
-              </Label>
-            </div>
-          </div>
-        </PopoverContent>
-      </Popover>
-
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            className="flex justify-start items-center w-full font-normal text-muted-foreground hover:text-muted-foreground"
-          >
-            <LuUsersRound className="size-4" />
-            <span>Add Assignees</span>
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent
-          className="space-y-4 p-4 w-80 max-h-80 overflow-y-auto"
-          align="start"
-        >
-          {assignees.length > 0 && (
-            <div>
-              <Label className="font-semibold tex-sm">Card Members</Label>
-              <div className="flex flex-col mt-2">
-                {assignees.map((member, index) => (
-                  <div
-                    key={index}
-                    className="group flex justify-between items-center gap-2 hover:bg-muted-foreground/10 p-2 rounded-md cursor-pointer"
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="ghost"
+                className="w-full justify-start gap-2 bg-muted/50 hover:bg-muted font-normal text-sm"
+                disabled={isUploading}
+              >
+                <LuPaperclip className="size-4" />
+                <span>{isUploading ? "Uploading..." : "Attachment"}</span>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="p-4 w-72" align="start">
+              <div className="space-y-3">
+                <div>
+                  <Label className="font-semibold">Attach a file</Label>
+                  <p className="text-muted-foreground text-xs mt-1">
+                    Choose a file from your device
+                  </p>
+                </div>
+                <Label className="block cursor-pointer">
+                  <span className="sr-only">Choose a file</span>
+                  <Input
+                    type="file"
+                    className="hidden"
+                    onChange={onAttachmentUpload}
+                    disabled={isUploading}
+                  />
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    asChild
+                    disabled={isUploading}
                   >
-                    <div className="flex items-center gap-2">
-                      <Image
-                        src={member?.user?.image || "/public/logo.png"}
-                        alt={member?.user?.name || ""}
-                        width={25}
-                        height={25}
-                        className="rounded-full"
-                      />
-                      <span className="text-sm">{member?.user?.name}</span>
-                    </div>
-                    <LuX
-                      className="opacity-0 group-hover:opacity-100"
-                      onClick={() => handleAssigneeChange(member)}
-                    />
-                  </div>
-                ))}
+                    <span>Choose a file</span>
+                  </Button>
+                </Label>
               </div>
-            </div>
-          )}
-          {assignees.length > 0 && boardMembers.length > 0 && <Separator />}
-          {boardMembers.length > 0 && (
-            <div>
-              <Label className="font-semibold tex-sm">Board Members</Label>
-              <div className="flex flex-col mt-2">
-                {boardMembers.map((member, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center gap-2 hover:bg-muted-foreground/10 p-2 rounded-md cursor-pointer"
-                    onClick={() => handleAssigneeChange(member)}
-                  >
-                    <Image
-                      src={member?.user?.image || "/public/logo.png"}
-                      alt={member?.user?.name || ""}
-                      width={25}
-                      height={25}
-                      className="rounded-full"
-                    />
-                    <span className="text-sm">{member?.user?.name}</span>
+            </PopoverContent>
+          </Popover>
+
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="ghost"
+                className="w-full justify-start gap-2 bg-muted/50 hover:bg-muted font-normal text-sm col-span-2 lg:col-span-1"
+              >
+                <LuUsersRound className="size-4" />
+                <span>Assignees</span>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent
+              className="p-3 w-72 max-h-80 overflow-y-auto"
+              align="start"
+            >
+              {assignees.length > 0 && (
+                <div className="space-y-1">
+                  <Label className="font-semibold text-xs text-muted-foreground uppercase tracking-wider px-1">
+                    Card members
+                  </Label>
+                  <div className="flex flex-col">
+                    {assignees.map((member, index) => (
+                      <div
+                        key={index}
+                        className="group flex justify-between items-center gap-2 hover:bg-muted p-2 rounded-md cursor-pointer"
+                        onClick={() => handleAssigneeChange(member)}
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Image
+                            src={member?.user?.image || "/logo.png"}
+                            alt={member?.user?.name || ""}
+                            width={24}
+                            height={24}
+                            className="rounded-full"
+                          />
+                          <span className="text-sm truncate">
+                            {member?.user?.name}
+                          </span>
+                        </div>
+                        <LuCheck className="size-4 text-primary shrink-0" />
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </PopoverContent>
-      </Popover>
+                </div>
+              )}
+              {assignees.length > 0 && boardMembers.length > 0 && (
+                <Separator className="my-2" />
+              )}
+              {boardMembers.length > 0 && (
+                <div className="space-y-1">
+                  <Label className="font-semibold text-xs text-muted-foreground uppercase tracking-wider px-1">
+                    Board members
+                  </Label>
+                  <div className="flex flex-col">
+                    {boardMembers.map((member, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center gap-2 hover:bg-muted p-2 rounded-md cursor-pointer"
+                        onClick={() => handleAssigneeChange(member)}
+                      >
+                        <Image
+                          src={member?.user?.image || "/logo.png"}
+                          alt={member?.user?.name || ""}
+                          width={24}
+                          height={24}
+                          className="rounded-full"
+                        />
+                        <span className="text-sm truncate">
+                          {member?.user?.name}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </PopoverContent>
+          </Popover>
+        </div>
+      </div>
     </div>
   );
 };
+
+function CommentsActivityTabs({ cardId }: { cardId: string }) {
+  const [tab, setTab] = useState<"comments" | "activity">("comments");
+  return (
+    <section className="space-y-3 bg-card border border-border rounded-xl p-4">
+      <div className="flex items-center gap-1 border-b border-border -mx-4 -mt-4 px-4 pt-3">
+        <button
+          type="button"
+          onClick={() => setTab("comments")}
+          className={`inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
+            tab === "comments"
+              ? "border-primary text-foreground"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <LuMessageSquare className="size-4" /> Comments
+        </button>
+        <button
+          type="button"
+          onClick={() => setTab("activity")}
+          className={`inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
+            tab === "activity"
+              ? "border-primary text-foreground"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <LuActivity className="size-4" /> Activity
+        </button>
+      </div>
+      <div className="pt-1">
+        {tab === "comments" ? (
+          <CardComments cardId={cardId} />
+        ) : (
+          <CardActivity cardId={cardId} />
+        )}
+      </div>
+    </section>
+  );
+}
