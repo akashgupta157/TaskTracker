@@ -1,17 +1,13 @@
 import prisma from "@/lib/prisma";
 import { Card } from "@/generated/prisma";
 import { handleApiError } from "@/lib/utils";
-import { logActivity } from "@/lib/activity";
 import { PrismaClient } from "@prisma/client";
-import { authOptions } from "@/utils/authOption";
-import { getServerSession, Session } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ cardId: string }> }
 ) {
-  const session = (await getServerSession(authOptions)) as Session;
   try {
     const { cardId } = await params;
     const {
@@ -35,15 +31,6 @@ export async function PATCH(
           isCompleted: !card.isCompleted,
         },
       });
-
-      if (session?.user?.id) {
-        await logActivity({
-          type: updatedCard.isCompleted ? "CARD_COMPLETED" : "CARD_REOPENED",
-          boardId: updatedCard.boardId,
-          userId: session.user.id,
-          cardId: updatedCard.id,
-        });
-      }
 
       return NextResponse.json(updatedCard);
     }
@@ -108,27 +95,6 @@ export async function PATCH(
     }
     await normalizeListPositions(prisma, newListId);
 
-    if (!isSameList && session?.user?.id) {
-      const lists = await prisma.list.findMany({
-        where: { id: { in: [currentListId, newListId] } },
-        select: { id: true, title: true },
-      });
-      const listTitles: Record<string, string> = {};
-      for (const l of lists) listTitles[l.id] = l.title;
-      await logActivity({
-        type: "CARD_MOVED",
-        boardId: result.list.boardId,
-        userId: session.user.id,
-        cardId: result.id,
-        data: {
-          fromListId: currentListId,
-          toListId: newListId,
-          fromListTitle: listTitles[currentListId] ?? null,
-          toListTitle: listTitles[newListId] ?? null,
-        },
-      });
-    }
-
     return NextResponse.json(result);
   } catch (error) {
     const { message, statusCode } = handleApiError(error);
@@ -156,13 +122,12 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ cardId: string }> }
 ) {
-  const session = (await getServerSession(authOptions)) as Session;
   try {
     const { cardId } = await params;
 
     const cardToDelete = await prisma.card.findUnique({
       where: { id: cardId },
-      select: { listId: true, position: true, title: true, boardId: true },
+      select: { listId: true, position: true },
     });
 
     if (!cardToDelete) {
@@ -190,16 +155,6 @@ export async function DELETE(
 
       return { success: true };
     });
-
-    if (session?.user?.id) {
-      await logActivity({
-        type: "CARD_DELETED",
-        boardId: cardToDelete.boardId,
-        userId: session.user.id,
-        cardId: null,
-        data: { title: cardToDelete.title, cardId },
-      });
-    }
 
     return NextResponse.json(
       {

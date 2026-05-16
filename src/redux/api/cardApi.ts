@@ -18,10 +18,7 @@ export const cardApi = baseApi.injectEndpoints({
         method: "PATCH",
         body,
       }),
-      invalidatesTags: (_, __, arg) => [
-        { type: "Board", id: arg.boardId },
-        { type: "Activity", id: arg.id },
-      ],
+      invalidatesTags: (_, __, arg) => [{ type: "Board", id: arg.boardId }],
     }),
 
     toggleCardComplete: builder.mutation<Card, string>({
@@ -30,10 +27,7 @@ export const cardApi = baseApi.injectEndpoints({
         method: "PATCH",
         body: { toggleComplete: true },
       }),
-      invalidatesTags: (_, __, cardId) => [
-        "Board",
-        { type: "Activity", id: cardId },
-      ],
+      invalidatesTags: ["Board"],
     }),
 
     updateCardPosition: builder.mutation<

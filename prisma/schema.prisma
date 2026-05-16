@@ -22,8 +22,6 @@ model User {
   boardMembers  BoardMember[]
   invitations   Invitation[]
   assignedCards CardAssignment[]
-  comments      Comment[]
-  activities    Activity[]
 
   @@map("users")
 }
@@ -41,7 +39,6 @@ model Board {
   members     BoardMember[]
   invitations Invitation[]
   Card        Card[]
-  activities  Activity[]
 
   @@index([adminId])
   @@map("boards")
@@ -96,74 +93,11 @@ model Card {
   assignees   CardAssignment[]
   boardId     String
   board       Board            @relation(fields: [boardId], references: [id], onDelete: Cascade)
-  comments    Comment[]
-  activities  Activity[]
 
   @@index([listId])
   @@index([listId, position])
   @@index([isCompleted])
   @@map("cards")
-}
-
-model Comment {
-  id        String   @id @default(cuid())
-  content   String
-  cardId    String
-  card      Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  isEdited  Boolean  @default(false)
-
-  @@index([cardId])
-  @@index([userId])
-  @@index([cardId, createdAt])
-  @@map("comments")
-}
-
-model Activity {
-  id        String       @id @default(cuid())
-  type      ActivityType
-  cardId    String?
-  card      Card?        @relation(fields: [cardId], references: [id], onDelete: SetNull)
-  boardId   String
-  board     Board        @relation(fields: [boardId], references: [id], onDelete: Cascade)
-  userId    String
-  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  data      Json?
-  createdAt DateTime     @default(now())
-
-  @@index([cardId])
-  @@index([boardId])
-  @@index([userId])
-  @@index([cardId, createdAt])
-  @@index([boardId, createdAt])
-  @@map("activities")
-}
-
-enum ActivityType {
-  CARD_CREATED
-  CARD_DELETED
-  CARD_MOVED
-  CARD_COMPLETED
-  CARD_REOPENED
-  TITLE_CHANGED
-  DESCRIPTION_CHANGED
-  PRIORITY_CHANGED
-  DUE_DATE_SET
-  DUE_DATE_CHANGED
-  DUE_DATE_REMOVED
-  ASSIGNEE_ADDED
-  ASSIGNEE_REMOVED
-  CHECKLIST_ADDED
-  CHECKLIST_ITEM_CHECKED
-  CHECKLIST_ITEM_UNCHECKED
-  CHECKLIST_ITEM_REMOVED
-  ATTACHMENT_ADDED
-  ATTACHMENT_REMOVED
-  COMMENT_ADDED
-  COMMENT_DELETED
 }
 
 model CardAssignment {
