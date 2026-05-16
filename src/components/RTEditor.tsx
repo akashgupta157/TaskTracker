@@ -63,13 +63,13 @@ export default function RTEditor({ value, onChange }: RTEditorProps) {
     editorProps: {
       attributes: {
         class:
-          "rounded-md border min-h-[200px] sm:h-[200px] border-input bg-background focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 p-2 overflow-y-auto",
+          "min-h-[180px] max-h-[320px] bg-card focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 p-3 overflow-y-auto text-sm scrollbar-thin scrollbar-thumb-[var(--scrollbar-thumb)] hover:scrollbar-thumb-[var(--scrollbar-thumb-hover)] scrollbar-track-transparent",
       },
     },
   });
 
   return (
-    <div className="flex flex-col space-y-1">
+    <div className="flex flex-col rounded-md border border-border focus-within:border-ring bg-card overflow-hidden transition-colors">
       <MenuBar editor={editor} />
       <EditorContent editor={editor} className={styles.editorContent} />
     </div>
@@ -164,18 +164,18 @@ function MenuBarInner({ editor }: { editor: Editor }) {
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-1 sm:gap-0 px-2 py-1.5 border rounded-md">
+    <div className="flex flex-wrap items-center gap-0.5 px-1.5 py-1 border-b border-border bg-muted/40">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
-            className="gap-0 px-3 sm:px-6"
-            size="icon"
+            className="gap-0.5 px-2 h-8 w-auto"
+            size="sm"
             variant="ghost"
             aria-label="Text formatting options"
             aria-haspopup="menu"
           >
-            <LuCaseSensitive className="size-5 sm:size-6" />
-            <LuChevronDown className="size-3 sm:size-4" />
+            <LuCaseSensitive className="size-4" />
+            <LuChevronDown className="size-3" />
             {activeLevel && (
               <span className="sr-only">Heading {activeLevel} selected</span>
             )}
@@ -216,7 +216,7 @@ function MenuBarInner({ editor }: { editor: Editor }) {
 
       <Separator
         orientation="vertical"
-        className="mx-1 sm:mx-2 data-[orientation=vertical]:h-6 sm:data-[orientation=vertical]:h-8.5"
+        className="mx-1 data-[orientation=vertical]:h-5"
       />
 
       <div className="flex items-center gap-1 sm:gap-0">
@@ -226,9 +226,9 @@ function MenuBarInner({ editor }: { editor: Editor }) {
           onClick={() => editor.chain().focus().toggleBold().run()}
           disabled={!editorState.canBold}
           aria-label="Bold"
-          className="w-8 sm:w-10 h-8 sm:h-10"
+          className="size-8"
         >
-          <LuBold className="w-3 sm:w-4 h-3 sm:h-4" />
+          <LuBold className="size-3.5" />
         </Button>
 
         <Button
@@ -237,9 +237,9 @@ function MenuBarInner({ editor }: { editor: Editor }) {
           onClick={() => editor.chain().focus().toggleItalic().run()}
           disabled={!editorState.canItalic}
           aria-label="Italic"
-          className="w-8 sm:w-10 h-8 sm:h-10"
+          className="size-8"
         >
-          <LuItalic className="w-3 sm:w-4 h-3 sm:h-4" />
+          <LuItalic className="size-3.5" />
         </Button>
 
         <Button
@@ -248,9 +248,9 @@ function MenuBarInner({ editor }: { editor: Editor }) {
           onClick={() => editor.chain().focus().toggleUnderline().run()}
           disabled={!editorState.canUnderline}
           aria-label="Underline"
-          className="w-8 sm:w-10 h-8 sm:h-10"
+          className="size-8"
         >
-          <LuUnderline className="w-3 sm:w-4 h-3 sm:h-4" />
+          <LuUnderline className="size-3.5" />
         </Button>
 
         <DropdownMenu>
@@ -259,9 +259,9 @@ function MenuBarInner({ editor }: { editor: Editor }) {
               size="icon"
               variant="ghost"
               aria-label="More formatting options"
-              className="w-8 sm:w-10 h-8 sm:h-10"
+              className="size-8"
             >
-              <LuEllipsis className="w-3 sm:w-4 h-3 sm:h-4" />
+              <LuEllipsis className="size-3.5" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent
@@ -298,7 +298,7 @@ function MenuBarInner({ editor }: { editor: Editor }) {
 
       <Separator
         orientation="vertical"
-        className="mx-1 sm:mx-2 data-[orientation=vertical]:h-6 sm:data-[orientation=vertical]:h-8.5"
+        className="mx-1 data-[orientation=vertical]:h-5"
       />
 
       <div className="flex items-center gap-1 sm:gap-0">
@@ -307,9 +307,9 @@ function MenuBarInner({ editor }: { editor: Editor }) {
           variant={editorState.isBulletList ? "secondary" : "ghost"}
           onClick={() => editor.chain().focus().toggleBulletList().run()}
           aria-label="Bullet list"
-          className="w-8 sm:w-10 h-8 sm:h-10"
+          className="size-8"
         >
-          <LuList className="w-3 sm:w-4 h-3 sm:h-4" />
+          <LuList className="size-3.5" />
         </Button>
 
         <Button
@@ -317,15 +317,15 @@ function MenuBarInner({ editor }: { editor: Editor }) {
           variant={editorState.isOrderedList ? "secondary" : "ghost"}
           onClick={() => editor.chain().focus().toggleOrderedList().run()}
           aria-label="Numbered list"
-          className="w-8 sm:w-10 h-8 sm:h-10"
+          className="size-8"
         >
-          <LuListOrdered className="w-3 sm:w-4 h-3 sm:h-4" />
+          <LuListOrdered className="size-3.5" />
         </Button>
       </div>
 
       <Separator
         orientation="vertical"
-        className="mx-1 sm:mx-2 data-[orientation=vertical]:h-6 sm:data-[orientation=vertical]:h-8.5"
+        className="mx-1 data-[orientation=vertical]:h-5"
       />
 
       <div className="flex items-center gap-1 sm:gap-0">
@@ -335,9 +335,9 @@ function MenuBarInner({ editor }: { editor: Editor }) {
               size="icon"
               variant={editorState.isLink ? "secondary" : "ghost"}
               aria-label="Insert link"
-              className="w-8 sm:w-10 h-8 sm:h-10"
+              className="size-8"
             >
-              <LuLink className="w-3 sm:w-4 h-3 sm:h-4" />
+              <LuLink className="size-3.5" />
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-[90vw] sm:w-auto">
@@ -430,9 +430,9 @@ function ImageUpload({ editor }: { editor: Editor }) {
           size="icon"
           variant="ghost"
           aria-label="Insert image"
-          className="w-8 sm:w-10 h-8 sm:h-10"
+          className="size-8"
         >
-          <LuImage className="w-3 sm:w-4 h-3 sm:h-4" />
+          <LuImage className="size-3.5" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="p-4 w-[90vw] sm:w-80" align="start">

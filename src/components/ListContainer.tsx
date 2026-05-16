@@ -11,10 +11,13 @@ import { AppDispatch } from "@/redux/store";
 import { RiCloseLine } from "react-icons/ri";
 import React, { useMemo, useState } from "react";
 import { SortableContext } from "@dnd-kit/sortable";
-import { updateCardPosition } from "@/redux/slices/cardSlice";
-import { moveList, moveCard } from "@/redux/slices/boardSlice";
+import { moveList, moveCard, addList } from "@/redux/slices/boardSlice";
 import type { List as ListType, Card as CardType } from "@/types";
-import { addNewList, updateListPosition } from "@/redux/slices/listSlice";
+import { useUpdateCardPositionMutation } from "@/redux/api/cardApi";
+import {
+  useCreateListMutation,
+  useUpdateListPositionMutation,
+} from "@/redux/api/listApi";
 import {
   DndContext,
   DragEndEvent,
@@ -32,11 +35,18 @@ import {
 export default function ListContainer({
   currentBoard,
   loading,
+  isFilterLoading,
 }: {
-  currentBoard: Board | null;
+  currentBoard: Board | undefined;
   loading: boolean;
+  isFilterLoading: boolean;
 }) {
   const dispatch = useDispatch<AppDispatch>();
+
+  const [createList] = useCreateListMutation();
+  const [updateListPositionMutation] = useUpdateListPositionMutation();
+  const [updateCardPositionMutation] = useUpdateCardPositionMutation();
+
   const [isNewList, setIsNewList] = useState(false);
   const [newListTitle, setNewListTitle] = useState("");
   const [activeList, setActiveList] = useState<ListType | null>(null);
@@ -44,7 +54,7 @@ export default function ListContainer({
   const [activeCardList, setActiveCardList] = useState<ListType | null>(null);
 
   const listId = useMemo(
-    () => currentBoard?.lists.map((list) => list.id) || [],
+    () => currentBoard?.lists?.map((list) => list.id) || [],
     [currentBoard]
   );
 
@@ -151,13 +161,11 @@ export default function ListContainer({
             newPosition: overListData.position,
           })
         );
-        dispatch(
-          updateListPosition({
-            boardId: currentBoard?.id ?? "",
-            listId: activeListData.id,
-            newPosition: overListData.position,
-          })
-        );
+        updateListPositionMutation({
+          boardId: currentBoard?.id ?? "",
+          listId: activeListData.id,
+          newPosition: overListData.position,
+        });
       }
     }
 
@@ -167,24 +175,22 @@ export default function ListContainer({
       if (over.data.current?.type === "Card") {
         const overCardData = over.data.current.card;
 
-        dispatch(
-          updateCardPosition({
-            cardId: activeCardData.id,
-            listId: overCardData.listId,
-            newPosition: overCardData.position,
-          })
-        );
+        updateCardPositionMutation({
+          cardId: activeCardData.id,
+          listId: overCardData.listId,
+          newPosition: overCardData.position,
+          boardId: currentBoard?.id,
+        });
       } else if (over.data.current?.type === "List") {
         const overListData = over.data.current.list;
         const newPosition = overListData.cards?.length || 0;
 
-        dispatch(
-          updateCardPosition({
-            cardId: activeCardData.id,
-            listId: overListData.id,
-            newPosition,
-          })
-        );
+        updateCardPositionMutation({
+          cardId: activeCardData.id,
+          listId: overListData.id,
+          newPosition,
+          boardId: currentBoard?.id,
+        });
       }
     }
   };
@@ -193,13 +199,19 @@ export default function ListContainer({
     e.preventDefault();
     if (!newListTitle.trim()) return;
 
-    await dispatch(
-      addNewList({
-        title: newListTitle.trim(),
-        position: currentBoard?.lists.length ?? 0,
-        boardId: currentBoard?.id ?? "",
-      })
-    );
+    await createList({
+      title: newListTitle.trim(),
+      position: currentBoard?.lists.length ?? 0,
+      boardId: currentBoard?.id ?? "",
+    })
+      .unwrap()
+      .then((data) => {
+        const now = new Date().toISOString();
+        dispatch(
+          addList({ ...data, cards: [], createdAt: now, updatedAt: now })
+        );
+      });
+
     setNewListTitle("");
     setIsNewList(false);
   };
@@ -218,7 +230,6 @@ export default function ListContainer({
       </div>
     );
   }
-
   return (
     <div className="flex items-start space-x-5 p-5 w-full h-full overflow-x-auto font-sans">
       <DndContext
@@ -229,14 +240,16 @@ export default function ListContainer({
         onDragEnd={handleDragEnd}
       >
         <SortableContext items={listId}>
-          {currentBoard?.lists.map((list) => (
-            <List key={list.id} list={list} />
+          {currentBoard?.lists?.map((list) => (
+            <List key={list.id} list={list} isFilterLoading={isFilterLoading} />
           ))}
         </SortableContext>
 
         {createPortal(
           <DragOverlay>
-            {activeList && <List list={activeList} />}
+            {activeList && (
+              <List list={activeList} isFilterLoading={isFilterLoading} />
+            )}
             {activeCard && activeCardList && (
               <Card card={activeCard} list={activeCardList} />
             )}

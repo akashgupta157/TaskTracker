@@ -1,5 +1,5 @@
 import { z } from "zod";
-import axios from "axios";
+import Filter from "./Filter";
 import { toast } from "sonner";
 import Image from "next/image";
 import { Board } from "@/types";
@@ -11,6 +11,9 @@ import { useForm } from "react-hook-form";
 import { Separator } from "./ui/separator";
 import { useSession } from "next-auth/react";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { AvatarCircles } from "./ui/avatar-circles";
+import { BackgroundSelector } from "./BackgroundSelector";
+import { useInviteBoardMemberMutation } from "@/redux/api/boardApi";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 import { LuCheck, LuListFilter, LuUserRoundPlus } from "react-icons/lu";
@@ -22,7 +25,6 @@ import {
   DialogTrigger,
   DialogContent,
 } from "./ui/dialog";
-import Filter from "./Filter";
 
 const formSchema = z.object({
   email: z
@@ -33,7 +35,7 @@ const formSchema = z.object({
         email.endsWith("@gmail.com") || email.endsWith("@googlemail.com"),
       {
         message: "Only Google email addresses are allowed for invitations",
-      }
+      },
     ),
 });
 
@@ -49,7 +51,8 @@ export default function Header({
   const [open, setOpen] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
 
-  const [inviteLoading, setInviteLoading] = useState(false);
+  const [inviteBoardMember, { isLoading: inviteLoading }] =
+    useInviteBoardMemberMutation();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -60,23 +63,28 @@ export default function Header({
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     if (!currentBoard?.id) return;
-    setInviteLoading(true);
+
     try {
-      const { data } = await axios.post(
-        "/api/boards/" + currentBoard?.id + "/invite",
-        values
-      );
-      setOpen(false);
-      toast.success(data.message);
+      const res = await inviteBoardMember({
+        boardId: currentBoard.id,
+        email: values.email,
+      }).unwrap();
+
+      toast.success(res.message);
       form.reset();
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        toast.error(error.response?.data.message);
-      }
-    } finally {
-      setInviteLoading(false);
+      setOpen(false);
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Object &&
+        "data" in error &&
+        error.data instanceof Object &&
+        "message" in error.data
+          ? (error.data.message as string)
+          : "Failed to send invite";
+      toast.error(errorMessage);
     }
   }
+
   return (
     <div className="flex flex-wrap justify-between items-center gap-3 bg-white/90 dark:bg-black/20 p-3 sm:p-4 md:px-6 lg:px-10 font-sans">
       {loading ? (
@@ -86,54 +94,23 @@ export default function Header({
           <h2 className="max-w-[180px] sm:max-w-xs md:max-w-md font-bold text-lg sm:text-xl truncate">
             {currentBoard?.title}
           </h2>
-          <div className="flex flex-shrink-0 items-center gap-2 sm:gap-3 md:gap-5">
+          <div className="flex flex-shrink-0 items-center gap-2">
             <div className="flex-shrink-0">
-              <div className="flex items-center -space-x-2">
-                {currentBoard?.members?.slice(0, 4).map((member) => (
-                  <Popover key={member.id}>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <PopoverTrigger asChild>
-                          <Image
-                            src={member.user.image || "/logo.png"}
-                            alt={member.user.name || "user"}
-                            width={25}
-                            height={25}
-                            className="border rounded-full size-6 sm:size-7 md:size-8 cursor-pointer"
-                          />
-                        </PopoverTrigger>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>{member.user.name}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                    <PopoverContent className="w-full min-w-fit max-w-[90vw] sm:max-w-xs">
-                      <div className="flex items-center gap-3">
-                        <Image
-                          src={member.user.image || "/logo.png"}
-                          alt={member.user.name || "user"}
-                          width={25}
-                          height={25}
-                          className="z-1 rounded-full size-10 sm:size-12 md:size-14 cursor-pointer"
-                        />
-                        <div className="overflow-hidden">
-                          <p className="font-bold truncate">
-                            {member.user.name}
-                          </p>
-                          <p className="text-sm truncate">
-                            {member.user.email}
-                          </p>
-                        </div>
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-                ))}
-                {currentBoard?.members && currentBoard.members.length > 4 && (
-                  <div className="flex justify-center items-center bg-gray-200 dark:bg-gray-700 rounded-full size-6 sm:size-7 md:size-8 font-medium text-xs">
-                    +{currentBoard.members.length - 4}
-                  </div>
-                )}
-              </div>
+              <AvatarCircles
+                className="-space-x-3"
+                numPeople={
+                  currentBoard && currentBoard.members?.length > 4
+                    ? currentBoard.members?.length - 4
+                    : 0
+                }
+                avatarUrls={currentBoard?.members
+                  ?.slice(0, 4)
+                  .map((member) => ({
+                    imageUrl: member.user.image || "/logo.png",
+                    name: member.user.name || "",
+                    email: member.user.email || "",
+                  }))}
+              />
             </div>
 
             {/* Filter button */}
@@ -161,6 +138,8 @@ export default function Header({
                 />
               </PopoverContent>
             </Popover>
+
+            <BackgroundSelector currentBoard={currentBoard} />
 
             {/* Invite member dialog */}
             <Dialog open={open} onOpenChange={setOpen}>
@@ -204,7 +183,7 @@ export default function Header({
                                         field.value &&
                                         (field.value.endsWith("@gmail.com") ||
                                           field.value.endsWith(
-                                            "@googlemail.com"
+                                            "@googlemail.com",
                                           ))
                                           ? "border-green-500"
                                           : ""
@@ -213,7 +192,7 @@ export default function Header({
                                     {field.value &&
                                       (field.value.endsWith("@gmail.com") ||
                                         field.value.endsWith(
-                                          "@googlemail.com"
+                                          "@googlemail.com",
                                         )) && (
                                         <LuCheck className="top-3 right-3 absolute w-4 h-4 text-green-500" />
                                       )}

@@ -15,11 +15,7 @@ export interface AppError {
 }
 
 export type BoardState = {
-  boards: Board[];
   currentBoard: (Board & { lists: (List & { cards: Card[] })[] }) | null;
-  loading: boolean;
-  error: AppError | null;
-  filterLoading: boolean;
 };
 
 export type Board = {
@@ -112,6 +108,51 @@ export enum Priority {
   MEDIUM = "MEDIUM",
   HIGH = "HIGH",
 }
+
+export type Comment = {
+  id: string;
+  content: string;
+  cardId: string;
+  userId: string;
+  user: User;
+  createdAt: string;
+  updatedAt: string;
+  isEdited: boolean;
+};
+
+export type ActivityType =
+  | "CARD_CREATED"
+  | "CARD_DELETED"
+  | "CARD_MOVED"
+  | "CARD_COMPLETED"
+  | "CARD_REOPENED"
+  | "TITLE_CHANGED"
+  | "DESCRIPTION_CHANGED"
+  | "PRIORITY_CHANGED"
+  | "DUE_DATE_SET"
+  | "DUE_DATE_CHANGED"
+  | "DUE_DATE_REMOVED"
+  | "ASSIGNEE_ADDED"
+  | "ASSIGNEE_REMOVED"
+  | "CHECKLIST_ADDED"
+  | "CHECKLIST_ITEM_CHECKED"
+  | "CHECKLIST_ITEM_UNCHECKED"
+  | "CHECKLIST_ITEM_REMOVED"
+  | "ATTACHMENT_ADDED"
+  | "ATTACHMENT_REMOVED"
+  | "COMMENT_ADDED"
+  | "COMMENT_DELETED";
+
+export type Activity = {
+  id: string;
+  type: ActivityType;
+  cardId: string | null;
+  boardId: string;
+  userId: string;
+  user: User;
+  data: Record<string, unknown> | null;
+  createdAt: string;
+};
 
 export enum Role {
   ADMIN = "ADMIN",

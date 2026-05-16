@@ -5,12 +5,9 @@ import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { Checkbox } from "./ui/checkbox";
 import { LuFilter } from "react-icons/lu";
-import { useDispatch } from "react-redux";
 import { getAllParams } from "@/lib/utils";
 import { useState, useEffect } from "react";
-import { AppDispatch } from "@/redux/store";
 import { CardFilters } from "@/types/CardFilter";
-import { filterBoard } from "@/redux/slices/boardSlice";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
   Select,
@@ -27,23 +24,19 @@ export default function Filter({
   currentBoard: Board | null;
   setFilterOpen: (isOpen: boolean) => void;
 }) {
-  const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [filters, setFilters] = useState<CardFilters>({});
 
   useEffect(() => {
     setFilters(getAllParams(searchParams));
-  }, [searchParams, currentBoard?.id, dispatch]);
+  }, [searchParams, currentBoard?.id]);
 
   const handleFilterChange = (
     key: keyof CardFilters,
     value: CardFilters[keyof CardFilters]
   ) => {
-    setFilters((prev) => ({
-      ...prev,
-      [key]: value,
-    }));
+    setFilters((prev) => ({ ...prev, [key]: value }));
   };
 
   const handlePriorityChange = (
@@ -51,99 +44,57 @@ export default function Filter({
     checked: boolean
   ) => {
     setFilters((prev) => {
-      const currentPriorities = prev.priority || [];
-      if (checked) {
-        return {
-          ...prev,
-          priority: [...currentPriorities, priority],
-        };
-      } else {
-        return {
-          ...prev,
-          priority: currentPriorities.filter((p) => p !== priority),
-        };
-      }
+      const current = prev.priority || [];
+      return {
+        ...prev,
+        priority: checked
+          ? [...current, priority]
+          : current.filter((p) => p !== priority),
+      };
     });
   };
 
   const handleAssigneeChange = (userId: string, checked: boolean) => {
     setFilters((prev) => {
-      const currentAssignees = prev.assigneeId || [];
-      if (checked) {
-        return {
-          ...prev,
-          assigneeId: [...currentAssignees, userId],
-        };
-      } else {
-        return {
-          ...prev,
-          assigneeId: currentAssignees.filter((id) => id !== userId),
-        };
-      }
+      const current = prev.assigneeId || [];
+      return {
+        ...prev,
+        assigneeId: checked
+          ? [...current, userId]
+          : current.filter((id) => id !== userId),
+      };
     });
   };
 
   const applyFilters = () => {
-    if (!currentBoard?.id) return;
-
-    const param = new URLSearchParams();
+    const params = new URLSearchParams();
 
     if (filters.isCompleted !== undefined) {
-      param.append("isCompleted", filters.isCompleted.toString());
+      params.append("isCompleted", String(filters.isCompleted));
     }
 
-    if (filters.priority && filters.priority.length > 0) {
-      filters.priority.forEach((priority: string) => {
-        param.append("priority", priority);
-      });
-    }
+    filters.priority?.forEach((p) => params.append("priority", p));
+    filters.assigneeId?.forEach((id) => params.append("assigneeId", id));
 
-    if (filters.assigneeId && filters.assigneeId.length > 0) {
-      filters.assigneeId.forEach((assigneeId: string) => {
-        param.append("assigneeId", assigneeId);
-      });
-    }
+    if (filters.dueDate) params.append("dueDate", filters.dueDate);
+    if (filters.search) params.append("search", filters.search);
 
-    if (filters.dueDate) {
-      param.append("dueDate", filters.dueDate);
-    }
+    router.replace(`${window.location.pathname}?${params.toString()}`, {
+      scroll: false,
+    });
 
-    if (filters.search) {
-      param.append("search", filters.search);
-    }
-
-    const newUrl = `${window.location.pathname}?${param.toString()}`;
-    router.replace(newUrl, { scroll: false });
-
-    dispatch(
-      filterBoard({
-        boardId: currentBoard.id,
-        filterData: filters,
-      })
-    );
     setFilterOpen(false);
   };
 
   const resetFilters = () => {
     setFilters({});
-
     router.replace(window.location.pathname, { scroll: false });
-
-    if (!currentBoard?.id) return;
-    dispatch(
-      filterBoard({
-        boardId: currentBoard.id,
-        filterData: {},
-      })
-    );
     setFilterOpen(false);
   };
 
   return (
-    <div className="">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="font-semibold text-lg">Filter Cards</h3>
-      </div>
+    <div>
+      <h3 className="mb-4 font-semibold text-lg">Filter Cards</h3>
 
       <div className="space-y-4">
         <div className="space-y-2">
@@ -154,12 +105,13 @@ export default function Filter({
             onChange={(e) => handleFilterChange("search", e.target.value)}
           />
         </div>
+
         <div className="space-y-2">
           <Label>Status</Label>
           <Select
             value={filters.isCompleted?.toString() || ""}
-            onValueChange={(value) =>
-              handleFilterChange("isCompleted", value === "true")
+            onValueChange={(v) =>
+              handleFilterChange("isCompleted", v === "true")
             }
           >
             <SelectTrigger>
@@ -174,29 +126,22 @@ export default function Filter({
 
         <div className="space-y-2">
           <Label>Priority</Label>
-          <div className="space-y-2">
-            {(["LOW", "MEDIUM", "HIGH"] as const).map((priority) => (
-              <div key={priority} className="flex items-center space-x-2">
-                <Checkbox
-                  id={`priority-${priority}`}
-                  checked={filters.priority?.includes(priority) || false}
-                  onCheckedChange={(checked) =>
-                    handlePriorityChange(priority, checked as boolean)
-                  }
-                />
-                <Label htmlFor={`priority-${priority}`} className="capitalize">
-                  {priority.toLowerCase()}
-                </Label>
-              </div>
-            ))}
-          </div>
+          {(["LOW", "MEDIUM", "HIGH"] as const).map((p) => (
+            <div key={p} className="flex items-center gap-2">
+              <Checkbox
+                checked={filters.priority?.includes(p) || false}
+                onCheckedChange={(c) => handlePriorityChange(p, c as boolean)}
+              />
+              <Label className="capitalize">{p.toLowerCase()}</Label>
+            </div>
+          ))}
         </div>
 
         <div className="space-y-2">
           <Label>Due Date</Label>
           <Select
             value={filters.dueDate || ""}
-            onValueChange={(value) => handleFilterChange("dueDate", value)}
+            onValueChange={(v) => handleFilterChange("dueDate", v)}
           >
             <SelectTrigger>
               <SelectValue placeholder="Select due date filter" />
@@ -209,47 +154,39 @@ export default function Filter({
           </Select>
         </div>
 
-        {currentBoard?.members && currentBoard.members.length > 0 && (
-          <div className="space-y-2">
-            <Label>Assigned To</Label>
-            <div className="space-y-2 max-h-24 overflow-y-auto">
-              {currentBoard.members.map((member) => (
-                <div key={member.id} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`assignee-${member.user.id}`}
-                    checked={
-                      filters.assigneeId?.includes(member.user.id) || false
-                    }
-                    onCheckedChange={(checked) =>
-                      handleAssigneeChange(member.user.id, checked as boolean)
-                    }
-                  />
-                  <Label
-                    htmlFor={`assignee-${member.user.id}`}
-                    className="flex items-center gap-2"
-                  >
-                    <Image
-                      src={member.user.image || ""}
-                      alt={member.user.name || ""}
-                      width={25}
-                      height={25}
-                      className="rounded-full w-6 h-6"
+        {currentBoard &&
+          currentBoard.members &&
+          currentBoard.members.length > 0 && (
+            <div className="space-y-2">
+              <Label>Assigned To</Label>
+              <div className="space-y-2 max-h-24 overflow-y-auto">
+                {currentBoard.members.map((m) => (
+                  <div key={m.id} className="flex items-center gap-2">
+                    <Checkbox
+                      checked={filters.assigneeId?.includes(m.user.id) || false}
+                      onCheckedChange={(c) =>
+                        handleAssigneeChange(m.user.id, c as boolean)
+                      }
                     />
-                    <span>{member.user.name || member.user.email}</span>
-                  </Label>
-                </div>
-              ))}
+                    <Label className="flex items-center gap-2">
+                      <Image
+                        src={m.user.image || ""}
+                        alt={m.user.name || ""}
+                        width={24}
+                        height={24}
+                        className="rounded-full"
+                      />
+                      {m.user.name || m.user.email}
+                    </Label>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
       </div>
 
       <div className="flex gap-2 mt-6">
-        <Button
-          variant="outline"
-          onClick={resetFilters}
-          className="flex-1 gap-2"
-        >
+        <Button variant="outline" onClick={resetFilters} className="flex-1">
           Reset
         </Button>
         <Button onClick={applyFilters} className="flex-1 gap-2">

@@ -1,17 +1,9 @@
 import { z } from "zod";
-import { cn } from "@/lib/utils";
-import { format } from "date-fns";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
-import { LuCalendarRange } from "react-icons/lu";
 import { Calendar } from "@/components/ui/calendar";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Form,
   FormControl,
@@ -35,7 +27,6 @@ export function DateTimePickerForm({
   onSubmit,
   initialDate,
 }: DateTimePickerFormProps) {
-  // Set default to tomorrow with current time if no initial date
   const defaultDate = initialDate || new Date();
   if (!initialDate) {
     defaultDate.setDate(defaultDate.getDate() + 1);
@@ -54,7 +45,6 @@ export function DateTimePickerForm({
 
   function handleDateSelect(date: Date | undefined) {
     if (date) {
-      // Preserve the current time when changing the date
       const currentTime = form.getValues("time") || new Date();
       const newDate = new Date(date);
       newDate.setHours(
@@ -89,129 +79,112 @@ export function DateTimePickerForm({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-5">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-3">
         <FormField
           control={form.control}
           name="time"
           render={({ field }) => (
             <FormItem className="flex flex-col">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <FormControl>
-                    <Button
-                      variant={"outline"}
-                      className={cn(
-                        "pl-3 w-full font-normal text-left",
-                        !field.value && "text-muted-foreground"
-                      )}
-                    >
-                      {field.value ? (
-                        format(field.value, "dd/MM/yyyy hh:mm aa")
-                      ) : (
-                        <span>DD/MM/YYYY hh:mm aa</span>
-                      )}
-                      <LuCalendarRange className="opacity-50 ml-auto w-4 h-4" />
-                    </Button>
-                  </FormControl>
-                </PopoverTrigger>
-                <PopoverContent className="p-0 w-auto">
-                  <div className="sm:flex">
-                    <Calendar
-                      mode="single"
-                      selected={field.value}
-                      onSelect={handleDateSelect}
-                      initialFocus
-                      fromDate={new Date()} // Disable past dates
-                    />
-                    <div className="flex sm:flex-row flex-col sm:divide-x divide-y sm:divide-y-0 sm:h-[300px]">
-                      <ScrollArea className="w-64 sm:w-auto">
-                        <div className="flex sm:flex-col p-2">
-                          {Array.from({ length: 12 }, (_, i) => i + 1)
-                            .reverse()
-                            .map((hour) => (
-                              <Button
-                                key={hour}
-                                size="icon"
-                                variant={
-                                  field.value &&
-                                  field.value.getHours() % 12 === hour % 12
-                                    ? "default"
-                                    : "ghost"
-                                }
-                                className="sm:w-full aspect-square shrink-0"
-                                onClick={() =>
-                                  handleTimeChange("hour", hour.toString())
-                                }
-                              >
-                                {hour}
-                              </Button>
-                            ))}
-                        </div>
-                        <ScrollBar
-                          orientation="horizontal"
-                          className="sm:hidden"
-                        />
-                      </ScrollArea>
-                      <ScrollArea className="w-64 sm:w-auto">
-                        <div className="flex sm:flex-col p-2">
-                          {Array.from({ length: 12 }, (_, i) => i * 5).map(
-                            (minute) => (
-                              <Button
-                                key={minute}
-                                size="icon"
-                                variant={
-                                  field.value &&
-                                  field.value.getMinutes() === minute
-                                    ? "default"
-                                    : "ghost"
-                                }
-                                className="sm:w-full aspect-square shrink-0"
-                                onClick={() =>
-                                  handleTimeChange("minute", minute.toString())
-                                }
-                              >
-                                {minute.toString().padStart(2, "0")}
-                              </Button>
-                            )
-                          )}
-                        </div>
-                        <ScrollBar
-                          orientation="horizontal"
-                          className="sm:hidden"
-                        />
-                      </ScrollArea>
-                      <ScrollArea className="">
-                        <div className="flex sm:flex-col p-2">
-                          {["AM", "PM"].map((ampm) => (
+              <FormControl>
+                <div className="flex flex-col">
+                  <Calendar
+                    mode="single"
+                    selected={field.value}
+                    onSelect={handleDateSelect}
+                    initialFocus
+                    fromDate={new Date()}
+                    className="p-0"
+                  />
+                  <div className="flex gap-1.5 mt-2 border-t pt-2">
+                    <ScrollArea className="flex-1 h-28 scrollbar-thin scrollbar-thumb-[var(--scrollbar-thumb)] scrollbar-track-transparent">
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground text-center mb-1 font-medium">
+                        Hour
+                      </p>
+                      <div className="flex flex-col gap-0.5 pr-2">
+                        {Array.from({ length: 12 }, (_, i) => i + 1).map(
+                          (hour) => (
                             <Button
-                              key={ampm}
-                              size="icon"
+                              key={hour}
+                              type="button"
+                              size="sm"
                               variant={
                                 field.value &&
-                                ((ampm === "AM" &&
-                                  field.value.getHours() < 12) ||
-                                  (ampm === "PM" &&
-                                    field.value.getHours() >= 12))
+                                field.value.getHours() % 12 === hour % 12
                                   ? "default"
                                   : "ghost"
                               }
-                              className="sm:w-full aspect-square shrink-0"
-                              onClick={() => handleTimeChange("ampm", ampm)}
+                              className="h-7 w-full text-xs"
+                              onClick={() =>
+                                handleTimeChange("hour", hour.toString())
+                              }
                             >
-                              {ampm}
+                              {hour}
                             </Button>
-                          ))}
-                        </div>
-                      </ScrollArea>
+                          )
+                        )}
+                      </div>
+                    </ScrollArea>
+                    <ScrollArea className="flex-1 h-28 scrollbar-thin scrollbar-thumb-[var(--scrollbar-thumb)] scrollbar-track-transparent">
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground text-center mb-1 font-medium">
+                        Min
+                      </p>
+                      <div className="flex flex-col gap-0.5 pr-2">
+                        {Array.from({ length: 12 }, (_, i) => i * 5).map(
+                          (minute) => (
+                            <Button
+                              key={minute}
+                              type="button"
+                              size="sm"
+                              variant={
+                                field.value &&
+                                field.value.getMinutes() === minute
+                                  ? "default"
+                                  : "ghost"
+                              }
+                              className="h-7 w-full text-xs"
+                              onClick={() =>
+                                handleTimeChange("minute", minute.toString())
+                              }
+                            >
+                              {minute.toString().padStart(2, "0")}
+                            </Button>
+                          )
+                        )}
+                      </div>
+                    </ScrollArea>
+                    <div className="flex-1">
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground text-center mb-1 font-medium">
+                        AM/PM
+                      </p>
+                      <div className="flex flex-col gap-0.5">
+                        {["AM", "PM"].map((ampm) => (
+                          <Button
+                            key={ampm}
+                            type="button"
+                            size="sm"
+                            variant={
+                              field.value &&
+                              ((ampm === "AM" && field.value.getHours() < 12) ||
+                                (ampm === "PM" && field.value.getHours() >= 12))
+                                ? "default"
+                                : "ghost"
+                            }
+                            className="h-7 w-full text-xs"
+                            onClick={() => handleTimeChange("ampm", ampm)}
+                          >
+                            {ampm}
+                          </Button>
+                        ))}
+                      </div>
                     </div>
                   </div>
-                </PopoverContent>
-              </Popover>
+                </div>
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-        <Button type="submit" className="w-full">
+        <Button type="submit" className="w-full" size="sm">
           Set Due Date
         </Button>
       </form>

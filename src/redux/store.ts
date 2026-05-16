@@ -1,15 +1,14 @@
-import { combineReducers, configureStore } from "@reduxjs/toolkit";
+import { baseApi } from "./api/baseApi";
 import boardReducer from "./slices/boardSlice";
-import listReducer from "./slices/listSlice";
-import cardReducer from "./slices/cardSlice";
+import { configureStore } from "@reduxjs/toolkit";
 
-const rootReducer = combineReducers({
-  board: boardReducer,
-  list: listReducer,
-  card: cardReducer,
-});
 export const store = configureStore({
-  reducer: rootReducer,
+  reducer: {
+    board: boardReducer,
+    [baseApi.reducerPath]: baseApi.reducer,
+  },
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware().concat(baseApi.middleware),
 });
 
 export type RootState = ReturnType<typeof store.getState>;
