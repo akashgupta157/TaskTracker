@@ -12,12 +12,12 @@ import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 
 const BACKGROUNDS = [
-  "bg-gradient-to-br from-sky-500 to-indigo-600",
-  "bg-gradient-to-br from-pink-500 to-yellow-500",
-  "bg-gradient-to-br from-green-400 to-blue-500",
-  "bg-gradient-to-br from-purple-500 to-pink-500",
-  "bg-gradient-to-br from-orange-500 to-red-600",
-  "bg-gradient-to-br from-slate-800 to-sky-900",
+  "bg-gradient-to-br from-sky-200 to-indigo-300 dark:from-sky-500 dark:to-indigo-600",
+  "bg-gradient-to-br from-pink-200 to-yellow-200 dark:from-pink-500 dark:to-yellow-500",
+  "bg-gradient-to-br from-green-200 to-blue-200 dark:from-green-400 dark:to-blue-500",
+  "bg-gradient-to-br from-purple-200 to-pink-200 dark:from-purple-500 dark:to-pink-500",
+  "bg-gradient-to-br from-orange-200 to-red-300 dark:from-orange-500 dark:to-red-600",
+  "bg-gradient-to-br from-slate-300 to-sky-400 dark:from-slate-800 dark:to-sky-900",
 ];
 
 export function BackgroundSelector({
