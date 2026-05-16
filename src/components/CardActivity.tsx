@@ -228,33 +228,36 @@ export function CardActivity({ cardId }: { cardId: string }) {
 
   return (
     <ol className="relative space-y-3 pl-1">
-      <div className="absolute left-[15px] top-2 bottom-2 w-px bg-border" />
+      <div className="absolute left-[17px] top-3 bottom-3 w-px bg-border" aria-hidden />
       {sorted.map((a) => (
         <li key={a.id} className="relative flex gap-3 items-start">
-          <span
-            className={`relative z-[1] flex justify-center items-center size-7 rounded-full shrink-0 ring-4 ring-background ${
-              TONE[a.type] || "bg-muted text-muted-foreground"
-            }`}
-          >
-            {ICONS[a.type] || <LuPlus className="size-3.5" />}
+          <span className="relative z-[1] size-7 rounded-full shrink-0 bg-card ring-4 ring-background">
+            <span
+              className={`absolute inset-0 flex justify-center items-center rounded-full ${
+                TONE[a.type] || "bg-muted text-muted-foreground"
+              }`}
+            >
+              {ICONS[a.type] || <LuPlus className="size-3.5" />}
+            </span>
           </span>
           <div className="flex-1 min-w-0 pt-0.5">
             <p className="text-sm leading-snug">
-              <span className="inline-flex items-center gap-1.5 align-middle">
-                {a.user?.image ? (
-                  <Image
-                    src={a.user.image}
-                    alt={a.user.name || "User"}
-                    width={18}
-                    height={18}
-                    className="rounded-full inline-block"
-                  />
-                ) : null}
-                <strong className="font-medium">
-                  {a.user?.name || "Someone"}
-                </strong>{" "}
+              {a.user?.image ? (
+                <Image
+                  src={a.user.image}
+                  alt={a.user.name || "User"}
+                  width={18}
+                  height={18}
+                  className="rounded-full inline-block align-middle mr-1.5"
+                />
+              ) : null}
+              <strong className="font-medium align-middle">
+                {a.user?.name || "Someone"}
+              </strong>
+              <span className="text-muted-foreground align-middle">
+                {" "}
+                {describe(a)}
               </span>
-              <span className="text-muted-foreground">{describe(a)}</span>
             </p>
             <p
               className="text-[11px] text-muted-foreground mt-0.5"

@@ -456,7 +456,7 @@ export default function CardDialog({
           {(cardDetails.priority ||
             cardDetails.dueDate ||
             cardDetails.assignees.length > 0) && (
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 pl-0.5">
               {cardDetails.priority && (
                 <button
                   type="button"
@@ -585,7 +585,7 @@ export default function CardDialog({
           )}
 
           {/* Footer */}
-          <div className="bottom-0 sticky bg-background mt-4 pt-4 pb-2 border-t">
+          <div className="bottom-0 sticky z-20 bg-background mt-4 pt-4 pb-2 border-t">
             <div className="flex justify-end gap-2">
               <Button
                 variant="ghost"
@@ -784,7 +784,7 @@ const SidebarActions = ({
         </p>
         <div className="grid grid-cols-2 lg:grid-cols-1 gap-1.5">
           <Select value={priority || ""} onValueChange={onPriorityChange}>
-            <SelectTrigger className="w-full bg-muted/50 hover:bg-muted border-0 font-normal text-sm justify-start gap-2 [&>span]:flex [&>span]:items-center [&>span]:gap-2">
+            <SelectTrigger className="w-full bg-muted/50 hover:bg-muted border-0 font-normal text-sm [&>span]:flex [&>span]:items-center [&>span]:gap-2">
               <SelectValue
                 placeholder={
                   <span className="flex items-center gap-2 text-foreground">
