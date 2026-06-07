@@ -1,40 +1,37 @@
+import { z } from "zod";
 import prisma from "@/lib/prisma";
 import { logActivity } from "@/lib/activity";
 import { handleApiError } from "@/lib/utils";
-import { authOptions } from "@/utils/authOption";
-import { getServerSession, Session } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
+import {
+  requireSession,
+  assertBoardMembership,
+  handleAuthError,
+} from "@/lib/auth";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const db = prisma as any;
+const updateCommentSchema = z.object({
+  content: z.string().min(1).max(5000),
+});
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ cardId: string; commentId: string }> }
 ) {
-  const session = (await getServerSession(authOptions)) as Session;
-  if (!session?.user?.id) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
-
   try {
+    const session = await requireSession();
     const { commentId } = await params;
-    const { content } = await request.json();
 
-    if (!content || !content.trim()) {
-      return NextResponse.json(
-        { message: "Comment content is required" },
-        { status: 400 }
-      );
-    }
-
-    const existing = await db.comment.findUnique({ where: { id: commentId } });
+    const existing = await prisma.comment.findUnique({
+      where: { id: commentId },
+      include: { card: { select: { boardId: true } } },
+    });
     if (!existing) {
       return NextResponse.json(
         { message: "Comment not found" },
         { status: 404 }
       );
     }
+    await assertBoardMembership(session.user.id, existing.card.boardId);
     if (existing.userId !== session.user.id) {
       return NextResponse.json(
         { message: "You can only edit your own comments" },
@@ -42,14 +39,31 @@ export async function PATCH(
       );
     }
 
-    const updated = await db.comment.update({
+    const parsed = updateCommentSchema.safeParse(await request.json());
+    if (!parsed.success) {
+      return NextResponse.json(
+        { errors: parsed.error.flatten() },
+        { status: 400 }
+      );
+    }
+    const content = parsed.data.content.trim();
+    if (!content) {
+      return NextResponse.json(
+        { message: "Comment content is required" },
+        { status: 400 }
+      );
+    }
+
+    const updated = await prisma.comment.update({
       where: { id: commentId },
-      data: { content: content.trim(), isEdited: true },
+      data: { content, isEdited: true },
       include: { user: true },
     });
 
     return NextResponse.json(updated);
   } catch (error) {
+    const authResp = handleAuthError(error);
+    if (authResp) return authResp;
     const { message, statusCode } = handleApiError(error);
     return NextResponse.json({ message }, { status: statusCode || 500 });
   }
@@ -59,17 +73,17 @@ export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ cardId: string; commentId: string }> }
 ) {
-  const session = (await getServerSession(authOptions)) as Session;
-  if (!session?.user?.id) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
-
   try {
+    const session = await requireSession();
     const { cardId, commentId } = await params;
 
-    const existing = await db.comment.findUnique({
+    const existing = await prisma.comment.findUnique({
       where: { id: commentId },
-      include: { card: { select: { boardId: true, board: { select: { adminId: true } } } } },
+      include: {
+        card: {
+          select: { boardId: true, board: { select: { adminId: true } } },
+        },
+      },
     });
     if (!existing) {
       return NextResponse.json(
@@ -77,9 +91,10 @@ export async function DELETE(
         { status: 404 }
       );
     }
+    await assertBoardMembership(session.user.id, existing.card.boardId);
 
     const isOwner = existing.userId === session.user.id;
-    const isAdmin = existing.card?.board?.adminId === session.user.id;
+    const isAdmin = existing.card.board.adminId === session.user.id;
     if (!isOwner && !isAdmin) {
       return NextResponse.json(
         { message: "Not allowed to delete this comment" },
@@ -87,7 +102,7 @@ export async function DELETE(
       );
     }
 
-    await db.comment.delete({ where: { id: commentId } });
+    await prisma.comment.delete({ where: { id: commentId } });
 
     await logActivity({
       type: "COMMENT_DELETED",
@@ -98,6 +113,8 @@ export async function DELETE(
 
     return NextResponse.json({ deletedCommentId: commentId });
   } catch (error) {
+    const authResp = handleAuthError(error);
+    if (authResp) return authResp;
     const { message, statusCode } = handleApiError(error);
     return NextResponse.json({ message }, { status: statusCode || 500 });
   }

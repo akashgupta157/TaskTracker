@@ -14,13 +14,6 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  // Prisma and build optimization settings
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  typescript: {
-    ignoreBuildErrors: true, // Prisma types might cause TS errors during build
-  },
   webpack: (config, { isServer }) => {
     if (isServer) {
       config.externals.push('@prisma/client');

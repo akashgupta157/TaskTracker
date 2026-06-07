@@ -1,19 +1,39 @@
+import { z } from "zod";
 import prisma from "@/lib/prisma";
 import nodemailer from "nodemailer";
 import { randomBytes } from "crypto";
 import { handleApiError } from "@/lib/utils";
-import { authOptions } from "@/utils/authOption";
-import { getServerSession, Session } from "next-auth";
+import { escapeHtml } from "@/lib/sanitize";
 import { NextRequest, NextResponse } from "next/server";
+import {
+  requireSession,
+  assertBoardMembership,
+  handleAuthError,
+} from "@/lib/auth";
+
+const inviteSchema = z.object({
+  email: z.string().email(),
+  role: z.enum(["ADMIN", "MEMBER"]).optional(),
+});
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ boardId: string }> }
 ) {
-  const session = (await getServerSession(authOptions)) as Session;
   try {
+    const session = await requireSession();
     const { boardId } = await params;
-    const { email } = await request.json();
+    await assertBoardMembership(session.user.id, boardId, {
+      requireAdmin: true,
+    });
+    const parsed = inviteSchema.safeParse(await request.json());
+    if (!parsed.success) {
+      return NextResponse.json(
+        { errors: parsed.error.flatten() },
+        { status: 400 }
+      );
+    }
+    const { email } = parsed.data;
 
     if (email === session.user.email) {
       return NextResponse.json(
@@ -89,6 +109,12 @@ export async function POST(
     });
 
     const inviteLink = `${process.env.NEXTAUTH_URL}/accept-invite?token=${token}`;
+    const inviterName = escapeHtml(session.user.name ?? "");
+    const inviterInitial = escapeHtml(
+      session.user && session.user.name ? session.user.name.charAt(0) : ""
+    );
+    const boardTitleEsc = escapeHtml(board.title);
+    const inviteLinkEsc = escapeHtml(inviteLink);
 
     const transporter = nodemailer.createTransport({
       service: "gmail",
@@ -274,16 +300,10 @@ export async function POST(
                     <p class="greeting">Hello,</p>
                     
                     <div style="display: flex; align-items: center; margin-bottom: 20px;">
-                        <div class="avatar">${
-                          session.user && session.user.name
-                            ? session.user.name.charAt(0)
-                            : ""
-                        }</div>
+                        <div class="avatar">${inviterInitial}</div>
                         <div>
-                            <strong>${
-                              session.user.name
-                            }</strong> has invited you to collaborate on the board<br>
-                            <strong>"${board.title}"</strong> in TaskTracker.
+                            <strong>${inviterName}</strong> has invited you to collaborate on the board<br>
+                            <strong>"${boardTitleEsc}"</strong> in TaskTracker.
                         </div>
                     </div>
                     
@@ -297,13 +317,13 @@ export async function POST(
                     </div>
                     
                     <div class="button-container">
-                        <a href="${inviteLink}" class="button">Accept Invitation</a>
+                        <a href="${inviteLinkEsc}" class="button">Accept Invitation</a>
                     </div>
                     
                     <div class="divider"></div>
                     
                     <p style="margin: 0; color: #64748b;">Or copy and paste this URL into your browser:</p>
-                    <p class="link-text">${inviteLink}</p>
+                    <p class="link-text">${inviteLinkEsc}</p>
                     
                     <p style="color: #94a3b8; font-size: 14px;">
                         If you didn't request this invitation, please ignore this email. 
@@ -328,6 +348,8 @@ export async function POST(
 
     return NextResponse.json({ message: "Invitation sent successfully" });
   } catch (error) {
+    const authResp = handleAuthError(error);
+    if (authResp) return authResp;
     const { message, statusCode } = handleApiError(error);
     return NextResponse.json({ message }, { status: statusCode || 500 });
   }

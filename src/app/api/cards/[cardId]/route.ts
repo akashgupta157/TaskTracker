@@ -1,49 +1,79 @@
+import { z } from "zod";
 import prisma from "@/lib/prisma";
-import { Card } from "@/generated/prisma";
 import { handleApiError } from "@/lib/utils";
 import { logActivity } from "@/lib/activity";
-import { PrismaClient } from "@prisma/client";
-import { authOptions } from "@/utils/authOption";
-import { getServerSession, Session } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
+import {
+  requireSession,
+  assertBoardMembership,
+  handleAuthError,
+} from "@/lib/auth";
+
+const patchSchema = z
+  .object({
+    position: z.number().int().min(0).optional(),
+    listId: z.string().min(1).optional(),
+    toggleComplete: z.boolean().optional(),
+  })
+  .refine(
+    (d) =>
+      d.toggleComplete === true ||
+      (typeof d.position === "number" && typeof d.listId === "string"),
+    { message: "Provide toggleComplete or both position and listId" }
+  );
+
+type Tx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
+
+async function normalizeListPositionsTx(tx: Tx, listId: string) {
+  const cards = await tx.card.findMany({
+    where: { listId },
+    orderBy: { position: "asc" },
+  });
+  await Promise.all(
+    cards.map((c, index) =>
+      tx.card.update({ where: { id: c.id }, data: { position: index } })
+    )
+  );
+}
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ cardId: string }> }
 ) {
-  const session = (await getServerSession(authOptions)) as Session;
   try {
+    const session = await requireSession();
     const { cardId } = await params;
-    const {
-      position: newPosition,
-      listId: newListId,
-      toggleComplete,
-    } = await request.json();
+    const parsed = patchSchema.safeParse(await request.json());
+    if (!parsed.success) {
+      return NextResponse.json(
+        { errors: parsed.error.flatten() },
+        { status: 400 }
+      );
+    }
+    const { position: newPosition, listId: newListId, toggleComplete } =
+      parsed.data;
+
+    const cardForAuth = await prisma.card.findUnique({
+      where: { id: cardId },
+      select: { boardId: true, listId: true, position: true, isCompleted: true },
+    });
+    if (!cardForAuth) {
+      return NextResponse.json({ message: "Card not found" }, { status: 404 });
+    }
+    await assertBoardMembership(session.user.id, cardForAuth.boardId);
 
     if (toggleComplete) {
-      const card = await prisma.card.findUnique({
-        where: { id: cardId },
-      });
-
-      if (!card) {
-        return NextResponse.json({ error: "Card not found" }, { status: 404 });
-      }
-
       const updatedCard = await prisma.card.update({
         where: { id: cardId },
-        data: {
-          isCompleted: !card.isCompleted,
-        },
+        data: { isCompleted: !cardForAuth.isCompleted },
       });
 
-      if (session?.user?.id) {
-        await logActivity({
-          type: updatedCard.isCompleted ? "CARD_COMPLETED" : "CARD_REOPENED",
-          boardId: updatedCard.boardId,
-          userId: session.user.id,
-          cardId: updatedCard.id,
-        });
-      }
+      await logActivity({
+        type: updatedCard.isCompleted ? "CARD_COMPLETED" : "CARD_REOPENED",
+        boardId: updatedCard.boardId,
+        userId: session.user.id,
+        cardId: updatedCard.id,
+      });
 
       return NextResponse.json(updatedCard);
     }
@@ -55,15 +85,7 @@ export async function PATCH(
       );
     }
 
-    const cardToMove = await prisma.card.findUnique({
-      where: { id: cardId },
-    });
-
-    if (!cardToMove) {
-      return NextResponse.json({ message: "Card not found" }, { status: 404 });
-    }
-
-    const currentListId = cardToMove.listId;
+    const currentListId = cardForAuth.listId;
     const isSameList = currentListId === newListId;
 
     const result = await prisma.$transaction(async (tx) => {
@@ -71,11 +93,9 @@ export async function PATCH(
         await tx.card.updateMany({
           where: {
             listId: currentListId,
-            position: { gt: cardToMove.position },
+            position: { gt: cardForAuth.position },
           },
-          data: {
-            position: { decrement: 1 },
-          },
+          data: { position: { decrement: 1 } },
         });
       }
 
@@ -84,31 +104,25 @@ export async function PATCH(
           listId: newListId,
           position: { gte: newPosition },
         },
-        data: {
-          position: { increment: 1 },
-        },
+        data: { position: { increment: 1 } },
       });
 
       const updatedCard = await tx.card.update({
         where: { id: cardId },
-        data: {
-          position: newPosition,
-          listId: newListId,
-        },
-        include: {
-          list: true,
-        },
+        data: { position: newPosition, listId: newListId },
+        include: { list: true },
       });
+
+      // Normalize positions atomically within the same txn
+      if (!isSameList) {
+        await normalizeListPositionsTx(tx, currentListId);
+      }
+      await normalizeListPositionsTx(tx, newListId);
 
       return updatedCard;
     });
 
     if (!isSameList) {
-      await normalizeListPositions(prisma, currentListId);
-    }
-    await normalizeListPositions(prisma, newListId);
-
-    if (!isSameList && session?.user?.id) {
       const lists = await prisma.list.findMany({
         where: { id: { in: [currentListId, newListId] } },
         select: { id: true, title: true },
@@ -131,33 +145,19 @@ export async function PATCH(
 
     return NextResponse.json(result);
   } catch (error) {
+    const authResp = handleAuthError(error);
+    if (authResp) return authResp;
     const { message, statusCode } = handleApiError(error);
     return NextResponse.json({ message }, { status: statusCode || 500 });
   }
 }
 
-async function normalizeListPositions(tx: PrismaClient, listId: string) {
-  const cards = await tx.card.findMany({
-    where: { listId },
-    orderBy: { position: "asc" },
-  });
-
-  await Promise.all(
-    cards.map((card: Card, index: number) =>
-      tx.card.update({
-        where: { id: card.id },
-        data: { position: index },
-      })
-    )
-  );
-}
-
 export async function DELETE(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ cardId: string }> }
 ) {
-  const session = (await getServerSession(authOptions)) as Session;
   try {
+    const session = await requireSession();
     const { cardId } = await params;
 
     const cardToDelete = await prisma.card.findUnique({
@@ -168,38 +168,26 @@ export async function DELETE(
     if (!cardToDelete) {
       return NextResponse.json({ message: "Card not found" }, { status: 404 });
     }
+    await assertBoardMembership(session.user.id, cardToDelete.boardId);
 
     await prisma.$transaction(async (tx) => {
-      await tx.card.delete({
-        where: { id: cardId },
-      });
-
+      await tx.card.delete({ where: { id: cardId } });
       await tx.card.updateMany({
         where: {
           listId: cardToDelete.listId,
-          position: {
-            gt: cardToDelete.position,
-          },
+          position: { gt: cardToDelete.position },
         },
-        data: {
-          position: {
-            decrement: 1,
-          },
-        },
+        data: { position: { decrement: 1 } },
       });
-
-      return { success: true };
     });
 
-    if (session?.user?.id) {
-      await logActivity({
-        type: "CARD_DELETED",
-        boardId: cardToDelete.boardId,
-        userId: session.user.id,
-        cardId: null,
-        data: { title: cardToDelete.title, cardId },
-      });
-    }
+    await logActivity({
+      type: "CARD_DELETED",
+      boardId: cardToDelete.boardId,
+      userId: session.user.id,
+      cardId: null,
+      data: { title: cardToDelete.title, cardId },
+    });
 
     return NextResponse.json(
       {
@@ -209,6 +197,8 @@ export async function DELETE(
       { status: 200 }
     );
   } catch (error) {
+    const authResp = handleAuthError(error);
+    if (authResp) return authResp;
     const { message, statusCode } = handleApiError(error);
     return NextResponse.json({ message }, { status: statusCode || 500 });
   }

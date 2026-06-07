@@ -4,10 +4,8 @@ import Image from "next/image";
 import dynamic from "next/dynamic";
 import React, { useState } from "react";
 import { CSS } from "@dnd-kit/utilities";
-import { useDispatch } from "react-redux";
 import { useSortable } from "@dnd-kit/sortable";
 import type { Card as CardType, List } from "@/types";
-import { toggleCardIsComplete } from "@/redux/slices/boardSlice";
 import { useToggleCardCompleteMutation } from "@/redux/api/cardApi";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 import {
@@ -31,7 +29,6 @@ const CardDialog = dynamic(() => import("./CardDialog"), {
 });
 
 export default function Card({ card, list }: { card: CardType; list: List }) {
-  const dispatch = useDispatch();
   const [open, setOpen] = useState(false);
 
   const [toggleComplete] = useToggleCardCompleteMutation();
@@ -68,11 +65,10 @@ export default function Card({ card, list }: { card: CardType; list: List }) {
   const handleToggleComplete = async (e: React.MouseEvent<HTMLDivElement>) => {
     e.stopPropagation();
     if (!card.id || !card.boardId) return;
-    dispatch(toggleCardIsComplete({ cardId: card.id }));
     try {
-      await toggleComplete(card.id).unwrap();
+      await toggleComplete({ cardId: card.id, boardId: card.boardId }).unwrap();
     } catch {
-      // dispatch(toggleCardIsComplete({ cardId: card.id }));
+      // Optimistic patch is reverted automatically on error.
     }
   };
 

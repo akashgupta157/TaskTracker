@@ -13,9 +13,8 @@ import { Separator } from "./ui/separator";
 import { uploadSupabase } from "@/lib/utils";
 import { BoardMember, Card, List } from "@/types";
 import React, { useState, useCallback } from "react";
-import { useSelector, useDispatch } from "react-redux";
+import { useSelector } from "react-redux";
 import { DateTimePickerForm } from "./DateTimePickerForm";
-import { addCard, modifyCard, removeCard } from "@/redux/slices/boardSlice";
 import { CardComments } from "./CardComments";
 import { CardActivity } from "./CardActivity";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
@@ -103,7 +102,6 @@ export default function CardDialog({
   cardData?: Card;
   setDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
-  const dispatch = useDispatch();
   const { currentBoard } = useSelector((state: RootState) => state.board);
 
   const [createCard, { isLoading: creating }] = useCreateCardMutation();
@@ -266,32 +264,20 @@ export default function CardDialog({
     }
     try {
       if (isNew) {
-        await createCard(cardDetails as Card)
-          .unwrap()
-          .then((data) => dispatch(addCard(data)));
+        await createCard(cardDetails as Card).unwrap();
         toast.success("Card created successfully");
       } else {
         await updateCard({
           ...cardData,
           ...cardDetails,
-        } as Card)
-          .unwrap()
-          .then((data) => dispatch(modifyCard(data)));
+        } as Card).unwrap();
         toast.success("Card updated successfully");
       }
       setDialogOpen(false);
-    } catch (error) {
+    } catch {
       toast.error("Failed to save card");
     }
-  }, [
-    cardDetails,
-    cardData,
-    isNew,
-    setDialogOpen,
-    createCard,
-    updateCard,
-    dispatch,
-  ]);
+  }, [cardDetails, cardData, isNew, setDialogOpen, createCard, updateCard]);
 
   const handleDelete = useCallback(async () => {
     if (!cardData) return;
@@ -302,12 +288,11 @@ export default function CardDialog({
         cardId: cardData.id,
         boardId: currentBoard?.id,
       }).unwrap();
-      dispatch(removeCard({ cardId: cardData.id }));
       toast.success("Card deleted successfully");
-    } catch (error) {
+    } catch {
       toast.error("Failed to delete card");
     }
-  }, [cardData, setDialogOpen, currentBoard?.id, deleteCard, dispatch]);
+  }, [cardData, setDialogOpen, currentBoard?.id, deleteCard]);
 
   const checklistDone = cardDetails.checklist.filter((i) => i.isChecked).length;
   const checklistTotal = cardDetails.checklist.length;

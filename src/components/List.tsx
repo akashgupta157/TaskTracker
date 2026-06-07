@@ -6,11 +6,9 @@ import { Button } from "./ui/button";
 import { CSS } from "@dnd-kit/utilities";
 import { Skeleton } from "./ui/skeleton";
 import { InlineEdit } from "./InlineEdit";
-import { useDispatch } from "react-redux";
 import React, { useMemo, useState } from "react";
 import { LuPlus, LuTrash2 } from "react-icons/lu";
 import { useSearchParams } from "next/navigation";
-import { deleteList, modifyListTitle } from "@/redux/slices/boardSlice";
 import { SortableContext, useSortable } from "@dnd-kit/sortable";
 import {
   useUpdateListTitleMutation,
@@ -47,7 +45,6 @@ export default function List({
   isFilterLoading: boolean;
 }) {
   const { size } = useSearchParams();
-  const dispatch = useDispatch();
 
   const [updateListTitleMutation] = useUpdateListTitleMutation();
   const [deleteListMutation] = useDeleteListMutation();
@@ -76,7 +73,6 @@ export default function List({
 
   const handleTitleChange = () => {
     if (listTitle === list.title) return;
-    dispatch(modifyListTitle({ listId: list.id, title: listTitle }));
     updateListTitleMutation({
       listId: list.id,
       boardId: list.boardId,
@@ -91,7 +87,6 @@ export default function List({
         listId: list.id,
         boardId: list.boardId,
       }).unwrap();
-      dispatch(deleteList({ listId: list.id }));
       toast.success("List deleted successfully!", { id: toastId });
     } catch {
       toast.error("Failed to delete list.", { id: toastId });

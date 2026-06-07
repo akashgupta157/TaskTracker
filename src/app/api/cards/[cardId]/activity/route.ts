@@ -2,16 +2,13 @@ import prisma from "@/lib/prisma";
 import { handleApiError } from "@/lib/utils";
 import { NextRequest, NextResponse } from "next/server";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const db = prisma as any;
-
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ cardId: string }> }
 ) {
   try {
     const { cardId } = await params;
-    const activities = await db.activity.findMany({
+    const activities = await prisma.activity.findMany({
       where: { cardId },
       orderBy: { createdAt: "desc" },
       include: { user: true },

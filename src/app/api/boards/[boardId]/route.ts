@@ -1,41 +1,42 @@
+import { z } from "zod";
 import prisma from "@/lib/prisma";
 import { handleApiError } from "@/lib/utils";
-import { authOptions } from "@/utils/authOption";
-import { getServerSession, Session } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
+import {
+  requireSession,
+  assertBoardMembership,
+  handleAuthError,
+} from "@/lib/auth";
+
+const updateBoardSchema = z.object({
+  title: z.string().min(1).max(100).optional(),
+  background: z.string().max(500).optional(),
+  description: z.string().max(2000).optional(),
+});
 
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ boardId: string }> }
 ) {
-  const session = (await getServerSession(authOptions)) as Session;
-  const { boardId } = await params;
-
   try {
-    const { background } = await request.json();
-
-    const existingBoard = await prisma.board.findUnique({
-      where: { id: boardId },
-      select: { adminId: true },
+    const session = await requireSession();
+    const { boardId } = await params;
+    // Board update requires admin
+    await assertBoardMembership(session.user.id, boardId, {
+      requireAdmin: true,
     });
 
-    if (!existingBoard) {
+    const parsed = updateBoardSchema.safeParse(await request.json());
+    if (!parsed.success) {
       return NextResponse.json(
-        { message: "Board not found" },
-        { status: 404 }
-      );
-    }
-
-    if (existingBoard.adminId !== session.user.id) {
-      return NextResponse.json(
-        { message: "Only the board admin can update the background" },
-        { status: 403 }
+        { errors: parsed.error.flatten() },
+        { status: 400 }
       );
     }
 
     const updatedBoard = await prisma.board.update({
       where: { id: boardId },
-      data: { background },
+      data: parsed.data,
       include: {
         admin: true,
         lists: {
@@ -46,39 +47,53 @@ export async function PUT(
               include: {
                 assignees: {
                   include: {
-                    boardMember: {
-                      include: {
-                        user: true,
-                      },
-                    },
+                    boardMember: { include: { user: true } },
                   },
                 },
               },
             },
           },
         },
-        members: {
-          include: {
-            user: true,
-          },
-        },
+        members: { include: { user: true } },
       },
     });
 
     return NextResponse.json(updatedBoard);
   } catch (error) {
+    const authResp = handleAuthError(error);
+    if (authResp) return authResp;
+    const { message, statusCode } = handleApiError(error);
+    return NextResponse.json({ message }, { status: statusCode || 500 });
+  }
+}
+
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: Promise<{ boardId: string }> }
+) {
+  try {
+    const session = await requireSession();
+    const { boardId } = await params;
+    await assertBoardMembership(session.user.id, boardId, {
+      requireAdmin: true,
+    });
+
+    await prisma.board.delete({ where: { id: boardId } });
+    return NextResponse.json({ deletedBoardId: boardId });
+  } catch (error) {
+    const authResp = handleAuthError(error);
+    if (authResp) return authResp;
     const { message, statusCode } = handleApiError(error);
     return NextResponse.json({ message }, { status: statusCode || 500 });
   }
 }
 
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ boardId: string }> }
 ) {
-  const session = (await getServerSession(authOptions)) as Session;
-
   try {
+    const session = await requireSession();
     const { boardId } = await params;
 
     const board = await prisma.board.findUnique({
@@ -86,13 +101,7 @@ export async function GET(
         id: boardId,
         OR: [
           { adminId: session.user.id },
-          {
-            members: {
-              some: {
-                userId: session.user.id,
-              },
-            },
-          },
+          { members: { some: { userId: session.user.id } } },
         ],
       },
       include: {
@@ -105,22 +114,14 @@ export async function GET(
               include: {
                 assignees: {
                   include: {
-                    boardMember: {
-                      include: {
-                        user: true,
-                      },
-                    },
+                    boardMember: { include: { user: true } },
                   },
                 },
               },
             },
           },
         },
-        members: {
-          include: {
-            user: true,
-          },
-        },
+        members: { include: { user: true } },
       },
     });
 
@@ -133,6 +134,8 @@ export async function GET(
 
     return NextResponse.json(board);
   } catch (error) {
+    const authResp = handleAuthError(error);
+    if (authResp) return authResp;
     const { message, statusCode } = handleApiError(error);
     return NextResponse.json({ message }, { status: statusCode || 500 });
   }

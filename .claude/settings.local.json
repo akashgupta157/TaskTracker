@@ -10,7 +10,10 @@
       "Bash(awk 'NR>=90 && NR<=130' src/components/CardDialog.tsx)",
       "Bash(rm -f /c/Users/akash/OneDrive/Desktop/TaskTracker/src/lib/activity_test.ts)",
       "Bash(awk 'NR>=580 && NR<=620' src/components/CardDialog.tsx)",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "Bash(npm install *)",
+      "Bash(echo \"EXIT=$?\")",
+      "Bash(npm run *)"
     ]
   }
 }

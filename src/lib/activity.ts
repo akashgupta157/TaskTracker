@@ -34,8 +34,7 @@ type LogInput = {
 export async function logActivity(entries: LogInput | LogInput[]) {
   const list = Array.isArray(entries) ? entries : [entries];
   if (list.length === 0) return;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await (prisma as any).activity.createMany({
+  await prisma.activity.createMany({
     data: list.map((e) => ({
       type: e.type,
       boardId: e.boardId,

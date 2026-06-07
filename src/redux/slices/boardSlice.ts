@@ -1,7 +1,19 @@
-import { BoardState, Card, List } from "@/types";
+import { BoardState, Card } from "@/types";
 import { normalizePositions } from "@/lib/utils";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
+/**
+ * boardSlice holds a transient snapshot of the active board used for UI-only
+ * concerns such as live drag-preview during drag-over events.
+ *
+ * The authoritative data lives in the RTK Query `getBoardById` cache. The
+ * page-level component mirrors that result into `currentBoard` so existing
+ * consumer components (Header, Filter, CardDialog, BackgroundSelector) can
+ * keep reading from a single selector. Server mutations are handled via
+ * RTK Query `onQueryStarted` optimistic patches against the query cache.
+ *
+ * Only reducers that represent ephemeral drag-preview UI state remain here.
+ */
 const initialState: BoardState = {
   currentBoard: null,
 };
@@ -17,65 +29,8 @@ const boardSlice = createSlice({
       state.currentBoard = action.payload;
     },
 
-    addCard: (state, action: PayloadAction<Card>) => {
-      if (!state.currentBoard) return;
-
-      const targetList = state.currentBoard.lists.find(
-        (list) => list.id === action.payload.listId
-      );
-
-      if (!targetList) return;
-
-      targetList.cards.push({ ...action.payload });
-      normalizePositions(targetList.cards);
-    },
-
-    modifyCard: (state, action: PayloadAction<Card>) => {
-      if (!state.currentBoard) return;
-
-      const updatedCard = { ...action.payload };
-
-      // Remove from old list
-      for (const list of state.currentBoard.lists) {
-        const index = list.cards.findIndex(
-          (card) => card.id === updatedCard.id
-        );
-
-        if (index !== -1) {
-          list.cards.splice(index, 1);
-          normalizePositions(list.cards);
-          break;
-        }
-      }
-
-      // Add to new list
-      const targetList = state.currentBoard.lists.find(
-        (list) => list.id === updatedCard.listId
-      );
-
-      if (!targetList) return;
-
-      targetList.cards.splice(updatedCard.position, 0, updatedCard);
-
-      normalizePositions(targetList.cards);
-    },
-
-    removeCard: (state, action: PayloadAction<{ cardId: string }>) => {
-      if (!state.currentBoard) return;
-
-      for (const list of state.currentBoard.lists) {
-        const index = list.cards.findIndex(
-          (card) => card.id === action.payload.cardId
-        );
-
-        if (index !== -1) {
-          list.cards.splice(index, 1);
-          normalizePositions(list.cards);
-          break;
-        }
-      }
-    },
-
+    // Drag-preview only: reorders cards in the in-memory snapshot during
+    // dnd-kit's onDragOver. The server-side write happens in onDragEnd.
     moveCard: (
       state,
       action: PayloadAction<{
@@ -119,40 +74,7 @@ const boardSlice = createSlice({
       state.currentBoard.lists = lists;
     },
 
-    toggleCardIsComplete: (
-      state,
-      action: PayloadAction<{ cardId: string }>
-    ) => {
-      if (!state.currentBoard) return;
-      state.currentBoard.lists.forEach((list) => {
-        const card = list.cards.find((c) => c.id === action.payload.cardId);
-        if (card) {
-          card.isCompleted = !card.isCompleted;
-        }
-      });
-    },
-
-    addList: (state, action: PayloadAction<List>) => {
-      if (!state.currentBoard) return;
-
-      state.currentBoard.lists.push({
-        ...action.payload,
-        cards: action.payload.cards ?? [],
-      });
-
-      normalizePositions(state.currentBoard.lists);
-    },
-
-    deleteList: (state, action: PayloadAction<{ listId: string }>) => {
-      if (!state.currentBoard) return;
-
-      state.currentBoard.lists = state.currentBoard.lists.filter(
-        (list) => list.id !== action.payload.listId
-      );
-
-      normalizePositions(state.currentBoard.lists);
-    },
-
+    // Drag-preview only: reorders lists in the in-memory snapshot.
     moveList: (
       state,
       action: PayloadAction<{ listId: string; newPosition: number }>
@@ -174,34 +96,9 @@ const boardSlice = createSlice({
         position: i,
       }));
     },
-
-    modifyListTitle: (
-      state,
-      action: PayloadAction<{ listId: string; title: string }>
-    ) => {
-      if (!state.currentBoard) return;
-
-      const list = state.currentBoard.lists.find(
-        (l) => l.id === action.payload.listId
-      );
-      if (list) {
-        list.title = action.payload.title;
-      }
-    },
   },
 });
 
 export default boardSlice.reducer;
 
-export const {
-  setCurrentBoard,
-  toggleCardIsComplete,
-  moveList,
-  moveCard,
-  modifyListTitle,
-  addList,
-  deleteList,
-  addCard,
-  modifyCard,
-  removeCard,
-} = boardSlice.actions;
+export const { setCurrentBoard, moveCard, moveList } = boardSlice.actions;

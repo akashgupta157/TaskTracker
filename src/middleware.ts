@@ -17,5 +17,12 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/api/boards/:path*, /api/lists/:path*, /api/cards/:path*"],
+  matcher: [
+    "/api/boards/:path*",
+    "/api/lists/:path*",
+    "/api/cards/:path*",
+    // Protect invitation routes EXCEPT /api/invitations/validate (public, used by accept-invite page)
+    // /api/invitations/accept requires auth — let it pass through (handler enforces session).
+    "/api/invitations/accept",
+  ],
 };

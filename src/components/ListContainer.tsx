@@ -11,7 +11,7 @@ import { AppDispatch } from "@/redux/store";
 import { RiCloseLine } from "react-icons/ri";
 import React, { useMemo, useState } from "react";
 import { SortableContext } from "@dnd-kit/sortable";
-import { moveList, moveCard, addList } from "@/redux/slices/boardSlice";
+import { moveList, moveCard } from "@/redux/slices/boardSlice";
 import type { List as ListType, Card as CardType } from "@/types";
 import { useUpdateCardPositionMutation } from "@/redux/api/cardApi";
 import {
@@ -203,14 +203,7 @@ export default function ListContainer({
       title: newListTitle.trim(),
       position: currentBoard?.lists.length ?? 0,
       boardId: currentBoard?.id ?? "",
-    })
-      .unwrap()
-      .then((data) => {
-        const now = new Date().toISOString();
-        dispatch(
-          addList({ ...data, cards: [], createdAt: now, updatedAt: now })
-        );
-      });
+    }).unwrap();
 
     setNewListTitle("");
     setIsNewList(false);
